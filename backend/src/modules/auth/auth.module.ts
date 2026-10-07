@@ -4,6 +4,7 @@ import { AuthService } from './auth.service.js';
 import { ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { MailModule } from '../mail/mail.module.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 
 @Module({
@@ -15,6 +16,7 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
         secret: configService.getOrThrow<string>('JWT_SECRET'),
       }),
     }),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

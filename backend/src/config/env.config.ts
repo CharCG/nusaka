@@ -8,4 +8,7 @@ export const envSchema = z.object({
   DIRECT_URL: z.string().trim().url(),
   JWT_SECRET: z.string().trim().min(1),
   JWT_ACCESS_EXPIRES_IN: z.string().trim().min(1),
+  RESEND_API_KEY: z.string().min(1),
+  EMAIL_FROM: z.string().min(1),
+  FRONTEND_URL: z.string().url(),
 });
