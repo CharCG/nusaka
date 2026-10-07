@@ -1,0 +1,12 @@
+.agents/
+.claude/
+.windsurf/
+build/
+coverage/
+dist/
+node_modules/
+src/generated/
+
+*.tsbuildinfo
+package-lock.json
+skills-lock.json
