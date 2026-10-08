@@ -11,7 +11,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const isHttpException = exception instanceof HttpException;
     const statusCode = isHttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    let message = 'Internal Server Error';
+    let message = 'Internal server error';
 
     if (isHttpException) {
       const error = exception.getResponse();
@@ -27,7 +27,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     } else {
       this.logger.error(
-        exception instanceof Error ? exception.message : 'Unknown Error',
+        exception instanceof Error ? exception.message : 'Unknown error',
         exception instanceof Error ? exception.stack : undefined,
       );
     }
