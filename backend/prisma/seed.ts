@@ -7,7 +7,7 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString }),
 });
 
-async function main() {
+async function achievements() {
   await prisma.achievement.upsert({
     where: { code: 'FIRST_STEP' },
     update: {
@@ -20,6 +20,31 @@ async function main() {
       description: '',
     },
   });
+}
+
+async function languages() {
+  const languages = [
+    { code: 'jav', name: 'Jawa' },
+    { code: 'sun', name: 'Sunda' },
+    { code: 'mad', name: 'Madura' },
+  ];
+
+  for (const language of languages) {
+    await prisma.language.upsert({
+      where: {
+        code: language.code,
+      },
+      update: {
+        name: language.name,
+      },
+      create: language,
+    });
+  }
+}
+
+async function main() {
+  await achievements();
+  await languages();
 }
 
 try {
