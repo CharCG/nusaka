@@ -14,4 +14,9 @@ export class LanguagesController {
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.languagesService.findOne(id);
   }
+
+  @Get(':id/path')
+  findPath(@Param('id', ParseUUIDPipe) id: string) {
+    return this.languagesService.findPath(id);
+  }
 }

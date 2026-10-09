@@ -44,4 +44,50 @@ export class LanguagesService {
 
     return language;
   }
+
+  async findPath(id: string) {
+    const language = await this.prismaService.language.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        units: {
+          orderBy: { order: 'asc' },
+          select: {
+            id: true,
+            title: true,
+            order: true,
+            chapters: {
+              orderBy: { order: 'asc' },
+              select: {
+                id: true,
+                title: true,
+                order: true,
+                lessons: {
+                  orderBy: { order: 'asc' },
+                  select: {
+                    id: true,
+                    title: true,
+                    order: true,
+                    _count: {
+                      select: {
+                        exercises: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!language) {
+      throw new NotFoundException('Language not found');
+    }
+
+    return language;
+  }
 }
