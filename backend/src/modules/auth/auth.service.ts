@@ -57,6 +57,12 @@ export class AuthService {
         nickname,
         email,
         passwordHash,
+        stats: {
+          create: {},
+        },
+        inventory: {
+          create: {},
+        },
       },
       select: {
         id: true,
