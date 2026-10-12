@@ -70,6 +70,8 @@ model UserStats {
   currentStreak Int    @default(0)
   longestStreak Int    @default(0)
 
+  lastLivesRecoveredAt DateTime @default(now())
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

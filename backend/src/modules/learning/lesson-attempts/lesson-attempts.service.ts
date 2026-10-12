@@ -1,14 +1,17 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { IdempotencyService } from '../../idempotency/idempotency.service.js';
+import { UserStatsService } from '../../user-stats/user-stats.service.js';
 import { StartLessonAttemptDto } from './dto/start-lesson-attempt.dto.js';
 import { SubmitAnswerDto } from './dto/submit-answer.dto.js';
 import { LessonAttemptStatus } from '../../../generated/prisma/enums.js';
 import { isCorrectAnswer } from './validators/exercise-answer.validator.js';
-import type { Prisma } from '../../../generated/prisma/client.js';
 
 @Injectable()
 export class LessonAttemptsService {
-  constructor(private readonly idempotencyService: IdempotencyService) {}
+  constructor(
+    private readonly idempotencyService: IdempotencyService,
+    private readonly userStatsService: UserStatsService,
+  ) {}
 
   start(userId: string, key: string, dto: StartLessonAttemptDto) {
     return this.idempotencyService.run({
@@ -17,7 +20,7 @@ export class LessonAttemptsService {
       operation: 'lesson-attempts.start',
       request: { lessonId: dto.lessonId },
       execute: async (tx) => {
-        const stats = await this.lockUserStats(tx, userId);
+        const stats = await this.userStatsService.recoverLives(tx, userId);
 
         if (stats.lives < 1) {
           throw new ConflictException('Not enough lives to start a lesson attempt');
@@ -151,7 +154,7 @@ export class LessonAttemptsService {
         answer: dto.answer,
       },
       execute: async (tx) => {
-        const stats = await this.lockUserStats(tx, userId);
+        const stats = await this.userStatsService.recoverLives(tx, userId);
 
         const lessonAttempt = await tx.lessonAttempt.findFirst({
           where: {
@@ -353,7 +356,7 @@ export class LessonAttemptsService {
       operation: 'lesson-attempts.abandon',
       request: { lessonAttemptId },
       execute: async (tx) => {
-        await this.lockUserStats(tx, userId);
+        await this.userStatsService.lockStats(tx, userId);
 
         const lessonAttempt = await tx.lessonAttempt.findFirst({
           where: {
@@ -387,20 +390,5 @@ export class LessonAttemptsService {
         };
       },
     });
-  }
-
-  private async lockUserStats(tx: Prisma.TransactionClient, userId: string) {
-    const [stats] = await tx.$queryRaw<{ lives: number }[]>`
-      SELECT "lives"
-      FROM "UserStats"
-      WHERE "userId" = ${userId}
-      FOR UPDATE
-    `;
-
-    if (!stats) {
-      throw new NotFoundException('User stats not found');
-    }
-
-    return stats;
   }
 }
