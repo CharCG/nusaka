@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "UserStats" ADD COLUMN     "lastLivesRecoveredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
