@@ -45,7 +45,7 @@ export class LanguagesService {
     return language;
   }
 
-  async findPath(id: string) {
+  async findPath(userId: string, id: string) {
     const language = await this.prismaService.language.findUnique({
       where: { id },
       select: {
@@ -71,9 +71,7 @@ export class LanguagesService {
                     title: true,
                     order: true,
                     _count: {
-                      select: {
-                        exercises: true,
-                      },
+                      select: { exercises: true },
                     },
                   },
                 },
@@ -88,6 +86,47 @@ export class LanguagesService {
       throw new NotFoundException('Language not found');
     }
 
-    return language;
+    const lessonIds = language.units.flatMap((unit) =>
+      unit.chapters.flatMap((chapter) => chapter.lessons.map((lesson) => lesson.id)),
+    );
+
+    const progresses = await this.prismaService.lessonProgress.findMany({
+      where: {
+        userId,
+        lessonId: { in: lessonIds },
+      },
+      select: {
+        lessonId: true,
+        isPerfect: true,
+      },
+    });
+
+    const completed = new Map(progresses.map((progress) => [progress.lessonId, progress.isPerfect]));
+
+    let previousCompleted = true;
+
+    return {
+      ...language,
+      units: language.units.map((unit) => ({
+        ...unit,
+        chapters: unit.chapters.map((chapter) => ({
+          ...chapter,
+          lessons: chapter.lessons.map((lesson) => {
+            const isCompleted = completed.has(lesson.id);
+            const isUnlocked = previousCompleted || isCompleted;
+            const isPerfect = completed.get(lesson.id) ?? false;
+
+            previousCompleted = isCompleted;
+
+            return {
+              ...lesson,
+              isUnlocked,
+              isCompleted,
+              isPerfect,
+            };
+          }),
+        })),
+      })),
+    };
   }
 }
