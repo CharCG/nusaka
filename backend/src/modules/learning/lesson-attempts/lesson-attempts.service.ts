@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { IdempotencyService } from '../../idempotency/idempotency.service.js';
 import { UserStatsService } from '../../user-stats/user-stats.service.js';
+import { StreaksService } from '../../streaks/streaks.service.js';
 import { StartLessonAttemptDto } from './dto/start-lesson-attempt.dto.js';
 import { SubmitAnswerDto } from './dto/submit-answer.dto.js';
 import { LessonAttemptStatus } from '../../../generated/prisma/enums.js';
@@ -11,6 +12,7 @@ export class LessonAttemptsService {
   constructor(
     private readonly idempotencyService: IdempotencyService,
     private readonly userStatsService: UserStatsService,
+    private readonly streaksService: StreaksService,
   ) {}
 
   start(userId: string, key: string, dto: StartLessonAttemptDto) {
@@ -334,6 +336,8 @@ export class LessonAttemptsService {
           remainingLives = updatedStats.lives;
         }
 
+        const streak = await this.streaksService.recordActivity(tx, userId);
+
         return {
           correct: true,
           status: LessonAttemptStatus.COMPLETED,
@@ -344,6 +348,7 @@ export class LessonAttemptsService {
           isPerfect,
           reward,
           lives: remainingLives,
+          streak,
         };
       },
     });

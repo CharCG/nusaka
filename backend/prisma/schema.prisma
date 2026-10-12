@@ -70,7 +70,9 @@ model UserStats {
   currentStreak Int    @default(0)
   longestStreak Int    @default(0)
 
-  lastLivesRecoveredAt DateTime @default(now())
+  lastLivesRecoveredAt DateTime  @default(now())
+  lastStreakActivityAt DateTime?
+  lastStreakEvaluatedAt DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

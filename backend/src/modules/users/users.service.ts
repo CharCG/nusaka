@@ -1,17 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { UserStatsService } from '../user-stats/user-stats.service.js';
+import { StreaksService } from '../streaks/streaks.service.js';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly userStatsService: UserStatsService,
+    private readonly streaksService: StreaksService,
   ) {}
 
   findMe(userId: string) {
     return this.prismaService.$transaction(async (tx) => {
       await this.userStatsService.recoverLives(tx, userId);
+      await this.streaksService.refreshStreak(tx, userId);
 
       const user = await tx.user.findUnique({
         where: { id: userId },

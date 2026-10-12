@@ -1,23 +1,30 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
+import { getActivityDayIndex } from '../../common/utils/activity-day.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 const DAILY_RECOVERY_LIVES = 5;
 const MAX_RECOVERY_LIVES = 25;
 
 @Injectable()
 export class UserStatsService {
-  constructor(private readonly prismaService: PrismaService) {}
-
   async lockStats(tx: Prisma.TransactionClient, userId: string) {
     const [stats] = await tx.$queryRaw<
       {
         lives: number;
         lastLivesRecoveredAt: Date;
+        currentStreak: number;
+        longestStreak: number;
+        lastStreakActivityAt: Date | null;
+        lastStreakEvaluatedAt: Date | null;
       }[]
     >`
-      SELECT "lives", "lastLivesRecoveredAt"
+      SELECT
+        "lives",
+        "lastLivesRecoveredAt",
+        "currentStreak",
+        "longestStreak",
+        "lastStreakActivityAt",
+        "lastStreakEvaluatedAt"
       FROM "UserStats"
       WHERE "userId" = ${userId}
       FOR UPDATE
@@ -32,10 +39,10 @@ export class UserStatsService {
 
   async recoverLives(tx: Prisma.TransactionClient, userId: string) {
     const stats = await this.lockStats(tx, userId);
-    const now = new Date();
 
-    const currentDay = Math.floor(now.getTime() / DAY_MS);
-    const lastRecoveryDay = Math.floor(stats.lastLivesRecoveredAt.getTime() / DAY_MS);
+    const now = new Date();
+    const currentDay = getActivityDayIndex(now);
+    const lastRecoveryDay = getActivityDayIndex(stats.lastLivesRecoveredAt);
     const elapsedDays = currentDay - lastRecoveryDay;
 
     if (elapsedDays <= 0) {
