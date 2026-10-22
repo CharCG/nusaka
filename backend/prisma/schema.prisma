@@ -20,21 +20,63 @@ model User {
   passwordHash String
   role         UserRole @default(USER)
 
+  passwordResetTokens PasswordResetToken[]
+
+  stats        UserStats?
+  inventory    UserInventory?
+  achievements UserAchievement[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  passwordResetTokens PasswordResetToken[]
 }
 
 model PasswordResetToken {
   id        String @id @default(uuid())
+  userId    String
   tokenHash String @unique
 
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model UserStats {
+  userId        String @id
+  xp            Int    @default(0)
+  lives         Int    @default(25)
+  gems          Int    @default(25)
+  currentStreak Int    @default(0)
+  longestStreak Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserInventory {
+  userId       String @id
+  streakFreeze Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Achievement {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  name        String
+  description String?
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@id([userId, achievementId])
 }
