@@ -12,6 +12,14 @@ enum UserRole {
   ADMIN
 }
 
+enum ExerciseType {
+  MATCHING
+  WORD_ORDER
+  MULTIPLE_CHOICE
+  TRANSLATION
+  FILL_BLANK
+}
+
 model User {
   id           String   @id @default(uuid())
   username     String   @unique
@@ -79,4 +87,67 @@ model UserAchievement {
   achievement Achievement @relation(fields: [achievementId], references: [id])
 
   @@id([userId, achievementId])
+}
+
+model Language {
+  id   String @id @default(uuid())
+  code String @unique
+  name String
+
+  units Unit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Unit {
+  id         String @id @default(uuid())
+  languageId String
+  title      String
+  order      Int
+
+  chapters Chapter[]
+
+  language Language @relation(fields: [languageId], references: [id])
+
+  @@unique([languageId, order])
+}
+
+model Chapter {
+  id     String @id @default(uuid())
+  unitId String
+  title  String
+  order  Int
+
+  lessons Lesson[]
+
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  @@unique([unitId, order])
+}
+
+model Lesson {
+  id        String @id @default(uuid())
+  chapterId String
+  title     String
+  order     Int
+
+  exercises Exercise[]
+
+  chapter Chapter @relation(fields: [chapterId], references: [id])
+
+  @@unique([chapterId, order])
+}
+
+model Exercise {
+  id       String       @id @default(uuid())
+  lessonId String
+  type     ExerciseType
+  order    Int
+  question Json
+  answer   Json
+
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([lessonId, order])
 }

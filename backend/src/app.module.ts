@@ -6,6 +6,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { envSchema } from './config/env.config.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { LanguagesModule } from './modules/learning/languages/languages.module.js';
+import { LessonsModule } from './modules/learning/lessons/lessons.module.js';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { UsersModule } from './modules/users/users.module.js';
     PrismaModule,
     AuthModule,
     UsersModule,
+    LanguagesModule,
+    LessonsModule,
   ],
   controllers: [AppController],
   providers: [],
