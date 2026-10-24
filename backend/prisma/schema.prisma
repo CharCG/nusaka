@@ -20,6 +20,13 @@ enum ExerciseType {
   FILL_BLANK
 }
 
+enum LessonAttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  ABANDONED
+}
+
 model User {
   id           String   @id @default(uuid())
   username     String   @unique
@@ -33,6 +40,9 @@ model User {
   stats        UserStats?
   inventory    UserInventory?
   achievements UserAchievement[]
+
+  lessonAttempts   LessonAttempt[]
+  lessonProgresses LessonProgress[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -132,7 +142,9 @@ model Lesson {
   title     String
   order     Int
 
-  exercises Exercise[]
+  exercises  Exercise[]
+  attempts   LessonAttempt[]
+  progresses LessonProgress[]
 
   chapter Chapter @relation(fields: [chapterId], references: [id])
 
@@ -150,4 +162,35 @@ model Exercise {
   lesson Lesson @relation(fields: [lessonId], references: [id])
 
   @@unique([lessonId, order])
+}
+
+model LessonAttempt {
+  id           String              @id @default(uuid())
+  userId       String
+  lessonId     String
+  requestId    String
+  status       LessonAttemptStatus @default(IN_PROGRESS)
+  initialLives Int
+  mistakes     Int                 @default(0)
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, requestId])
+  @@index([userId, status])
+}
+
+model LessonProgress {
+  userId   String
+  lessonId String
+
+  completedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@id([userId, lessonId])
 }
