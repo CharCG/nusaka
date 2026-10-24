@@ -16,7 +16,7 @@ export class LanguagesService {
     });
   }
 
-  async findPath(code: string) {
+  async findPath(userId: string, code: string) {
     const language = await this.prismaService.language.findUnique({
       where: { code },
       select: {
@@ -44,6 +44,10 @@ export class LanguagesService {
                     _count: {
                       select: { exercises: true },
                     },
+                    progresses: {
+                      where: { userId },
+                      select: { completedAt: true },
+                    },
                   },
                 },
               },
@@ -57,6 +61,37 @@ export class LanguagesService {
       throw new NotFoundException('Language not found');
     }
 
-    return language;
+    let previousLessonCompleted = true;
+
+    return {
+      id: language.id,
+      code: language.code,
+      name: language.name,
+      units: language.units.map((unit) => ({
+        id: unit.id,
+        title: unit.title,
+        order: unit.order,
+        chapters: unit.chapters.map((chapter) => ({
+          id: chapter.id,
+          title: chapter.title,
+          order: chapter.order,
+          lessons: chapter.lessons.map((lesson) => {
+            const isCompleted = lesson.progresses.length > 0;
+            const isUnlocked = previousLessonCompleted || isCompleted;
+
+            previousLessonCompleted = isCompleted;
+
+            return {
+              id: lesson.id,
+              title: lesson.title,
+              order: lesson.order,
+              _count: lesson._count,
+              isUnlocked,
+              isCompleted,
+            };
+          }),
+        })),
+      })),
+    };
   }
 }

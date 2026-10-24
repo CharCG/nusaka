@@ -1,11 +1,258 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../src/generated/prisma/client.js';
+import { PrismaClient, type ExerciseType, type Prisma } from '../src/generated/prisma/client.js';
 
 const connectionString = process.env.DIRECT_URL;
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString }),
 });
+
+type SeedExercise = {
+  type: ExerciseType;
+  question: Prisma.InputJsonObject;
+  answer: Prisma.InputJsonObject;
+};
+
+type SeedLesson = {
+  title: string;
+  exercises: [SeedExercise, SeedExercise, SeedExercise];
+};
+
+function multipleChoice(prompt: string, options: [string, string, string], correctIndex: 0 | 1 | 2): SeedExercise {
+  const optionIds = ['a', 'b', 'c'];
+
+  return {
+    type: 'MULTIPLE_CHOICE',
+    question: {
+      prompt,
+      options: options.map((text, index) => ({ id: optionIds[index], text })),
+    },
+    answer: { correctOptionId: optionIds[correctIndex] },
+  };
+}
+
+function translation(text: string, acceptedAnswers: string[]): SeedExercise {
+  return {
+    type: 'TRANSLATION',
+    question: { prompt: 'Translate to English', text },
+    answer: { acceptedAnswers },
+  };
+}
+
+function wordOrder(prompt: string, words: string[]): SeedExercise {
+  const tokens = words.map((text, index) => ({ id: `t${index + 1}`, text }));
+
+  return {
+    type: 'WORD_ORDER',
+    question: { prompt, tokens: [...tokens].reverse() },
+    answer: { correctTokenIds: tokens.map((token) => token.id) },
+  };
+}
+
+function fillBlank(prompt: string, sentence: string, acceptedAnswers: string[]): SeedExercise {
+  return {
+    type: 'FILL_BLANK',
+    question: { prompt, sentence },
+    answer: { acceptedAnswers },
+  };
+}
+
+function matching(pairs: [string, string][]): SeedExercise {
+  return {
+    type: 'MATCHING',
+    question: {
+      prompt: 'Match each Javanese word with its English meaning',
+      left: pairs.map(([text], index) => ({ id: `l${index + 1}`, text })),
+      right: pairs.map(([, text], index) => ({ id: `r${index + 1}`, text })).reverse(),
+    },
+    answer: {
+      pairs: pairs.map((_, index) => ({
+        leftId: `l${index + 1}`,
+        rightId: `r${index + 1}`,
+      })),
+    },
+  };
+}
+
+const lesson1: SeedLesson = {
+  title: 'Basic Greetings',
+  exercises: [
+    multipleChoice('What does "sugeng enjing" mean?', ['Good morning', 'Thank you', 'Goodbye'], 0),
+    translation('Sugeng dalu', ['good night']),
+    wordOrder('Arrange the words to say "Good morning"', ['Sugeng', 'enjing']),
+  ],
+};
+
+const lesson2: SeedLesson = {
+  title: 'Saying Goodbye',
+  exercises: [
+    multipleChoice('What does "pamit" mean?', ['Saying thank you', 'Taking leave', 'Introducing yourself'], 1),
+    translation('Aku pamit', ['i am taking leave', "i'm taking leave"]),
+    wordOrder('Arrange the words to say "I am taking leave"', ['Aku', 'pamit']),
+  ],
+};
+
+const lesson3: SeedLesson = {
+  title: 'Asking How Someone Is',
+  exercises: [
+    multipleChoice('What does "piye kabarmu?" mean?', ['What is your name?', 'Where are you from?', 'How are you?'], 2),
+    translation('Apik', ['good']),
+    fillBlank('Complete the question "How are you?"', 'Piye ____?', ['kabarmu']),
+  ],
+};
+
+const lesson4: SeedLesson = {
+  title: 'Introducing Yourself',
+  exercises: [
+    multipleChoice('What does "jenengku Budi" mean?', ['My name is Budi', 'I am from Solo', 'How are you?'], 0),
+    translation('Aku Budi', ['i am budi', "i'm budi"]),
+    wordOrder('Arrange the words to say "My name is Budi"', ['Jenengku', 'Budi']),
+  ],
+};
+
+const lesson5: SeedLesson = {
+  title: "Asking Someone's Name",
+  exercises: [
+    multipleChoice('What does "sapa jenengmu?" mean?', ['How are you?', 'What is your name?', 'Good morning'], 1),
+    translation('Jeneng', ['name']),
+    fillBlank('Complete the question "What is your name?"', 'Sapa ____?', ['jenengmu']),
+  ],
+};
+
+const lesson6: SeedLesson = {
+  title: 'Where Are You From?',
+  exercises: [
+    multipleChoice('What does "aku saka Solo" mean?', ['My name is Solo', 'I am fine', 'I am from Solo'], 2),
+    translation('Saka', ['from']),
+    wordOrder('Arrange the words to say "I am from Solo"', ['Aku', 'saka', 'Solo']),
+  ],
+};
+
+const lesson7: SeedLesson = {
+  title: 'Saying Thank You',
+  exercises: [
+    multipleChoice('What does "matur nuwun" mean?', ['Thank you', 'Good morning', 'No'], 0),
+    translation('Matur nuwun', ['thank you', 'thanks']),
+    fillBlank('Complete the phrase "Thank you"', 'Matur ____', ['nuwun']),
+  ],
+};
+
+const lesson8: SeedLesson = {
+  title: 'Saying Sorry',
+  exercises: [
+    multipleChoice('What does "nyuwun pangapunten" express?', ['Gratitude', 'An apology', 'A greeting'], 1),
+    translation('Ngapura', ['forgive']),
+    wordOrder('Arrange the words to express an apology', ['Nyuwun', 'pangapunten']),
+  ],
+};
+
+const lesson9: SeedLesson = {
+  title: 'Yes and No',
+  exercises: [
+    multipleChoice('What does "inggih" mean?', ['No', 'Thank you', 'Yes'], 2),
+    translation('Mboten', ['no']),
+    matching([
+      ['Inggih', 'Yes'],
+      ['Mboten', 'No'],
+    ]),
+  ],
+};
+
+const lesson10: SeedLesson = {
+  title: 'Number 1-10',
+  exercises: [
+    multipleChoice('What number is "siji"?', ['One', 'Two', 'Three'], 0),
+    translation('Loro', ['two', '2']),
+    matching([
+      ['Siji', 'One'],
+      ['Loro', 'Two'],
+      ['Telu', 'Three'],
+    ]),
+  ],
+};
+
+const lesson11: SeedLesson = {
+  title: 'Number 11-20',
+  exercises: [
+    multipleChoice('What number is "sewelas"?', ['Twelve', 'Eleven', 'Twenty'], 1),
+    translation('Rolas', ['twelve', '12']),
+    matching([
+      ['Sewelas', 'Eleven'],
+      ['Rolas', 'Twelve'],
+      ['Rong puluh', 'Twenty'],
+    ]),
+  ],
+};
+
+const lesson12: SeedLesson = {
+  title: 'Tens and Hundreds',
+  exercises: [
+    multipleChoice('What number is "sepuluh"?', ['Twenty', 'One hundred', 'Ten'], 2),
+    translation('Satus', ['one hundred', 'a hundred', 'hundred', '100']),
+    matching([
+      ['Sepuluh', 'Ten'],
+      ['Rong puluh', 'Twenty'],
+      ['Satus', 'One hundred'],
+    ]),
+  ],
+};
+
+const lesson13: SeedLesson = {
+  title: 'Basic Colors',
+  exercises: [
+    multipleChoice('What color is "abang"?', ['Red', 'Blue', 'Green'], 0),
+    translation('Ijo', ['green']),
+    matching([
+      ['Abang', 'Red'],
+      ['Biru', 'Blue'],
+      ['Ijo', 'Green'],
+    ]),
+  ],
+};
+
+const lesson14: SeedLesson = {
+  title: 'Everyday Objects',
+  exercises: [
+    multipleChoice('What does "buku" mean?', ['Table', 'Book', 'Chair'], 1),
+    translation('Meja', ['table']),
+    matching([
+      ['Buku', 'Book'],
+      ['Meja', 'Table'],
+      ['Kursi', 'Chair'],
+    ]),
+  ],
+};
+
+const lesson15: SeedLesson = {
+  title: 'Describing Objects',
+  exercises: [
+    multipleChoice('What does "gedhe" mean?', ['Small', 'Long', 'Big'], 2),
+    translation('Cilik', ['small']),
+    matching([
+      ['Gedhe', 'Big'],
+      ['Cilik', 'Small'],
+      ['Dawa', 'Long'],
+    ]),
+  ],
+};
+
+const learningUnits = [
+  {
+    title: 'Basics',
+    chapters: [
+      { title: 'Greetings', lessons: [lesson1, lesson2, lesson3] },
+      { title: 'Introductions', lessons: [lesson4, lesson5, lesson6] },
+      { title: 'Expressions', lessons: [lesson7, lesson8, lesson9] },
+    ],
+  },
+  {
+    title: 'Everyday',
+    chapters: [
+      { title: 'Numbers', lessons: [lesson10, lesson11, lesson12] },
+      { title: 'Colors and Objects', lessons: [lesson13, lesson14, lesson15] },
+    ],
+  },
+];
 
 async function seedAchievements() {
   await prisma.achievement.upsert({
@@ -24,7 +271,7 @@ async function seedAchievements() {
 
 async function seedLanguages() {
   const languages = [
-    { code: 'jav', name: 'Jawa' },
+    { code: 'jav', name: 'Java' },
     { code: 'sun', name: 'Sunda' },
     { code: 'mad', name: 'Madura' },
   ];
@@ -45,226 +292,77 @@ async function seedLearning() {
   });
 
   if (!language) {
-    throw new Error(`Language 'jav' not found. Seed languages first.`);
+    throw new Error("Language 'jav' not found");
   }
 
-  const unit = await prisma.unit.upsert({
-    where: {
-      languageId_order: {
-        languageId: language.id,
-        order: 1,
-      },
-    },
-    update: { title: 'Basics' },
-    create: {
-      languageId: language.id,
-      title: 'Basics',
-      order: 1,
-    },
-  });
-
-  const chapter = await prisma.chapter.upsert({
-    where: {
-      unitId_order: {
-        unitId: unit.id,
-        order: 1,
-      },
-    },
-    update: { title: 'Greetings' },
-    create: {
-      unitId: unit.id,
-      title: 'Greetings',
-      order: 1,
-    },
-  });
-
-  const lesson = await prisma.lesson.upsert({
-    where: {
-      chapterId_order: {
-        chapterId: chapter.id,
-        order: 1,
-      },
-    },
-    update: { title: 'Basic Greetings' },
-    create: {
-      chapterId: chapter.id,
-      title: 'Basic Greetings',
-      order: 1,
-    },
-  });
-
-  const exercises = [
-    {
-      order: 1,
-      type: 'MULTIPLE_CHOICE',
-      question: {
-        prompt: 'What does "matur nuwun" mean?',
-        options: [
-          { id: 'a', text: 'Good morning' },
-          { id: 'b', text: 'Thank you' },
-          { id: 'c', text: 'Goodbye' },
-        ],
-      },
-      answer: { correctOptionId: 'b' },
-    },
-    {
-      order: 2,
-      type: 'MULTIPLE_CHOICE',
-      question: {
-        prompt: 'What does "sugeng enjing" mean?',
-        options: [
-          { id: 'a', text: 'Good night' },
-          { id: 'b', text: 'Good afternoon' },
-          { id: 'c', text: 'Good morning' },
-        ],
-      },
-      answer: { correctOptionId: 'c' },
-    },
-    {
-      order: 3,
-      type: 'TRANSLATION',
-      question: {
-        prompt: 'Translate to English',
-        text: 'Matur nuwun',
-      },
-      answer: {
-        acceptedAnswers: ['thank you', 'thanks'],
-      },
-    },
-    {
-      order: 4,
-      type: 'TRANSLATION',
-      question: {
-        prompt: 'Translate to Javanese',
-        text: 'Good morning',
-      },
-      answer: {
-        acceptedAnswers: ['sugeng enjing'],
-      },
-    },
-    {
-      order: 5,
-      type: 'WORD_ORDER',
-      question: {
-        prompt: 'Arrange the words to say "Thank you"',
-        tokens: [
-          { id: 't1', text: 'nuwun' },
-          { id: 't2', text: 'matur' },
-        ],
-      },
-      answer: {
-        correctTokenIds: ['t2', 't1'],
-      },
-    },
-    {
-      order: 6,
-      type: 'WORD_ORDER',
-      question: {
-        prompt: 'Arrange the words to say "Good morning"',
-        tokens: [
-          { id: 't1', text: 'enjing' },
-          { id: 't2', text: 'sugeng' },
-        ],
-      },
-      answer: {
-        correctTokenIds: ['t2', 't1'],
-      },
-    },
-    {
-      order: 7,
-      type: 'FILL_BLANK',
-      question: {
-        prompt: 'Complete the Javanese phrase for "Thank you"',
-        sentence: 'Matur ____',
-      },
-      answer: {
-        acceptedAnswers: ['nuwun'],
-      },
-    },
-    {
-      order: 8,
-      type: 'FILL_BLANK',
-      question: {
-        prompt: 'Complete the Javanese phrase for "Good morning"',
-        sentence: 'Sugeng ____',
-      },
-      answer: {
-        acceptedAnswers: ['enjing'],
-      },
-    },
-    {
-      order: 9,
-      type: 'MATCHING',
-      question: {
-        prompt: 'Match each phrase with its meaning',
-        left: [
-          { id: 'l1', text: 'Matur nuwun' },
-          { id: 'l2', text: 'Sugeng enjing' },
-        ],
-        right: [
-          { id: 'r1', text: 'Good morning' },
-          { id: 'r2', text: 'Thank you' },
-        ],
-      },
-      answer: {
-        pairs: [
-          { leftId: 'l1', rightId: 'r2' },
-          { leftId: 'l2', rightId: 'r1' },
-        ],
-      },
-    },
-    {
-      order: 10,
-      type: 'MATCHING',
-      question: {
-        prompt: 'Match each Javanese word with its meaning',
-        left: [
-          { id: 'l1', text: 'Inggih' },
-          { id: 'l2', text: 'Mboten' },
-        ],
-        right: [
-          { id: 'r1', text: 'No' },
-          { id: 'r2', text: 'Yes' },
-        ],
-      },
-      answer: {
-        pairs: [
-          { leftId: 'l1', rightId: 'r2' },
-          { leftId: 'l2', rightId: 'r1' },
-        ],
-      },
-    },
-  ] as const;
-
-  for (const exercise of exercises) {
-    await prisma.exercise.upsert({
+  for (const [unitIndex, unitData] of learningUnits.entries()) {
+    const unitOrder = unitIndex + 1;
+    const unit = await prisma.unit.upsert({
       where: {
-        lessonId_order: {
-          lessonId: lesson.id,
-          order: exercise.order,
-        },
+        languageId_order: { languageId: language.id, order: unitOrder },
       },
-      update: {
-        type: exercise.type,
-        question: exercise.question,
-        answer: exercise.answer,
-      },
+      update: { title: unitData.title },
       create: {
-        lessonId: lesson.id,
-        order: exercise.order,
-        type: exercise.type,
-        question: exercise.question,
-        answer: exercise.answer,
+        languageId: language.id,
+        title: unitData.title,
+        order: unitOrder,
       },
     });
-  }
 
-  const exerciseCount = await prisma.exercise.count({
-    where: { lessonId: lesson.id },
-  });
+    for (const [chapterIndex, chapterData] of unitData.chapters.entries()) {
+      const chapterOrder = chapterIndex + 1;
+      const chapter = await prisma.chapter.upsert({
+        where: {
+          unitId_order: { unitId: unit.id, order: chapterOrder },
+        },
+        update: { title: chapterData.title },
+        create: {
+          unitId: unit.id,
+          title: chapterData.title,
+          order: chapterOrder,
+        },
+      });
 
-  if (exerciseCount !== 10) {
-    throw new Error(`Lesson '${lesson.title}' must contain exactly 10 exercises`);
+      for (const [lessonIndex, lessonData] of chapterData.lessons.entries()) {
+        const lessonOrder = lessonIndex + 1;
+        const lesson = await prisma.lesson.upsert({
+          where: {
+            chapterId_order: { chapterId: chapter.id, order: lessonOrder },
+          },
+          update: { title: lessonData.title },
+          create: {
+            chapterId: chapter.id,
+            title: lessonData.title,
+            order: lessonOrder,
+          },
+        });
+
+        for (const [exerciseIndex, exercise] of lessonData.exercises.entries()) {
+          const exerciseOrder = exerciseIndex + 1;
+
+          await prisma.exercise.upsert({
+            where: {
+              lessonId_order: { lessonId: lesson.id, order: exerciseOrder },
+            },
+            update: exercise,
+            create: {
+              lessonId: lesson.id,
+              order: exerciseOrder,
+              ...exercise,
+            },
+          });
+        }
+
+        await prisma.exercise.deleteMany({
+          where: {
+            lessonId: lesson.id,
+            order: {
+              notIn: lessonData.exercises.map((_, index) => index + 1),
+            },
+          },
+        });
+      }
+    }
   }
 }
 
