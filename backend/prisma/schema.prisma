@@ -69,7 +69,11 @@ model UserStats {
   currentStreak Int    @default(0)
   longestStreak Int    @default(0)
 
+  lastLivesRegenAt DateTime @default(now()) @db.Timestamptz(3)
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lastLivesRegenAt, userId])
 }
 
 model UserInventory {

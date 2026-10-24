@@ -8,6 +8,7 @@ import { envSchema } from './config/env.config.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { LanguagesModule } from './modules/learning/languages/languages.module.js';
 import { LessonsModule } from './modules/learning/lessons/lessons.module.js';
+import { LivesModule } from './modules/lives/lives.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { LessonsModule } from './modules/learning/lessons/lessons.module.js';
     UsersModule,
     LanguagesModule,
     LessonsModule,
+    LivesModule,
   ],
   controllers: [AppController],
   providers: [],
