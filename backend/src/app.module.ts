@@ -28,6 +28,5 @@ import { StreaksModule } from './modules/streaks/streaks.module.js';
     StreaksModule,
   ],
   controllers: [AppController],
-  providers: [],
 })
 export class AppModule {}
