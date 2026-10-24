@@ -35,6 +35,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       }
     }
 
-    throw new ConflictException('Another request is updating the data');
+    throw new ConflictException('Another request is updating the data, retry the request');
   }
 }

@@ -9,6 +9,7 @@ import { UsersModule } from './modules/users/users.module.js';
 import { LanguagesModule } from './modules/learning/languages/languages.module.js';
 import { LessonsModule } from './modules/learning/lessons/lessons.module.js';
 import { LivesModule } from './modules/lives/lives.module.js';
+import { StreaksModule } from './modules/streaks/streaks.module.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { LivesModule } from './modules/lives/lives.module.js';
     LanguagesModule,
     LessonsModule,
     LivesModule,
+    StreaksModule,
   ],
   controllers: [AppController],
   providers: [],

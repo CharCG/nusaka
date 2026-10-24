@@ -37,10 +37,9 @@ model User {
 
   passwordResetTokens PasswordResetToken[]
 
-  stats        UserStats?
-  inventory    UserInventory?
-  achievements UserAchievement[]
-
+  stats            UserStats?
+  inventory        UserInventory?
+  achievements     UserAchievement[]
   lessonAttempts   LessonAttempt[]
   lessonProgresses LessonProgress[]
 
@@ -69,7 +68,8 @@ model UserStats {
   currentStreak Int    @default(0)
   longestStreak Int    @default(0)
 
-  lastLivesRegenAt DateTime @default(now()) @db.Timestamptz(3)
+  lastLivesRegenAt DateTime  @default(now()) @db.Timestamptz(3)
+  lastStreakDate   DateTime? @db.Date
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

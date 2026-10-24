@@ -6,13 +6,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { StreaksService } from '../../streaks/streaks.service.js';
 import { StartLessonDto } from './dto/start-lesson.dto.js';
 import { FinishLessonAttemptDto } from './dto/finish-lesson-attempt.dto.js';
 import { LessonAttempt, Prisma } from '../../../generated/prisma/client.js';
 
 @Injectable()
 export class LessonsService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly streaksService: StreaksService,
+  ) {}
 
   async startLesson(userId: string, lessonId: string, dto: StartLessonDto) {
     try {
@@ -167,22 +171,20 @@ export class LessonsService {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return this.prismaService.withTransactionRetry(async (tx) => {
-          const existingAttempt = await tx.lessonAttempt.findUnique({
-            where: {
-              userId_requestId: {
-                userId,
-                requestId: dto.requestId,
-              },
+        const existingAttempt = await this.prismaService.lessonAttempt.findUnique({
+          where: {
+            userId_requestId: {
+              userId,
+              requestId: dto.requestId,
             },
-          });
-
-          if (!existingAttempt) {
-            throw error;
-          }
-
-          return this.startResponse(tx, existingAttempt, lessonId);
+          },
         });
+
+        if (!existingAttempt) {
+          throw error;
+        }
+
+        return this.startResponse(this.prismaService, existingAttempt, lessonId);
       }
 
       throw error;
@@ -191,6 +193,8 @@ export class LessonsService {
 
   async finishLessonAttempt(userId: string, lessonAttemptId: string, dto: FinishLessonAttemptDto) {
     return this.prismaService.withTransactionRetry(async (tx) => {
+      const now = new Date();
+
       const attempt = await tx.lessonAttempt.findFirst({
         where: {
           id: lessonAttemptId,
@@ -224,7 +228,7 @@ export class LessonsService {
       }
 
       if (stats.lives < dto.mistakes) {
-        throw new ConflictException('Lives have changed and are insufficient for this result');
+        throw new ConflictException('Lives have changed, retry after restoring enough lives');
       }
 
       const status = dto.completed ? 'COMPLETED' : dto.mistakes === attempt.initialLives ? 'FAILED' : 'ABANDONED';
@@ -263,9 +267,13 @@ export class LessonsService {
         data: {
           status,
           mistakes: dto.mistakes,
-          finishedAt: new Date(),
+          finishedAt: now,
         },
       });
+
+      if (status === 'COMPLETED') {
+        await this.streaksService.recordActivity(tx, userId, now);
+      }
 
       return this.finishResponse(tx, finishedAttempt);
     });
@@ -273,11 +281,11 @@ export class LessonsService {
 
   private async startResponse(tx: Prisma.TransactionClient, attempt: LessonAttempt, lessonId: string) {
     if (attempt.lessonId !== lessonId) {
-      throw new ConflictException('Request ID has already been used for another lesson');
+      throw new ConflictException('Request ID has already been used for another lesson, retry with a new request ID');
     }
 
     if (attempt.status !== 'IN_PROGRESS') {
-      throw new ConflictException('This session has ended. Use a new request ID to start again');
+      throw new ConflictException('The session has ended, retry with a new request ID');
     }
 
     const lesson = await tx.lesson.findUniqueOrThrow({
