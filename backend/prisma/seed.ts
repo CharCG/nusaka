@@ -366,10 +366,112 @@ async function seedLearning() {
   }
 }
 
-try {
-  await seedAchievements();
-  await seedLanguages();
-  await seedLearning();
-} finally {
-  await prisma.$disconnect();
+async function seedStory() {
+  const language = await prisma.language.findUnique({
+    where: { code: 'jav' },
+    select: { id: true },
+  });
+
+  if (!language) {
+    throw new Error("Language 'jav' not found");
+  }
+
+  const vocabularyIds = {
+    wiji: '8c17f03a-9241-4e8d-a6d4-000000000101',
+    alas: '8c17f03a-9241-4e8d-a6d4-000000000102',
+    banyu: '8c17f03a-9241-4e8d-a6d4-000000000103',
+    uyah: '8c17f03a-9241-4e8d-a6d4-000000000104',
+    wani: '8c17f03a-9241-4e8d-a6d4-000000000105',
+  };
+
+  // https://kbji.kemendikdasmen.go.id
+  const vocabularies = [
+    { id: vocabularyIds.wiji, word: 'wiji', meaning: 'seed', usageExample: 'wiji iki ditandur ing kebon.' },
+    { id: vocabularyIds.alas, word: 'alas', meaning: 'forest', usageExample: 'aku mlaku ing alas.' },
+    { id: vocabularyIds.banyu, word: 'banyu', meaning: 'water', usageExample: 'aku ngombe banyu.' },
+    { id: vocabularyIds.uyah, word: 'uyah', meaning: 'salt', usageExample: 'ibu tuku uyah.' },
+    { id: vocabularyIds.wani, word: 'wani', meaning: 'brave', usageExample: 'Nara wani.' },
+  ];
+
+  for (const { id, ...vocabulary } of vocabularies) {
+    const data = { ...vocabulary, languageId: language.id };
+
+    await prisma.vocabulary.upsert({
+      where: { id },
+      update: data,
+      create: { id, ...data },
+    });
+  }
+
+  const storyData = {
+    languageId: language.id,
+    title: 'Nara and the Quiet Garden',
+    description: 'An original story about a village garden, a small discovery, and the courage to speak up.',
+  };
+
+  const story = await prisma.story.upsert({
+    where: { id: '8c17f03a-9241-4e8d-a6d4-000000000001' },
+    update: storyData,
+    create: { id: '8c17f03a-9241-4e8d-a6d4-000000000001', ...storyData },
+  });
+
+  const pages: Prisma.InputJsonObject[] = [
+    {
+      segments: [
+        { text: 'Every afternoon, Nara helped her grandfather in the village garden. One day, he gave her a jar of ' },
+        { text: 'wiji', vocabularyId: vocabularyIds.wiji },
+        { text: ', seeds saved from the last harvest. Nara planted them beside the old bench and drew a little map so she would remember where each row began. But after several hot days, the soil grew dry. Even the watering channel beside the garden had become strangely quiet.' },
+      ],
+    },
+    {
+      segments: [
+        { text: 'Nara asked her grandmother to follow the channel with her. Together they walked to the edge of the ' },
+        { text: 'alas', vocabularyId: vocabularyIds.alas },
+        { text: ', where tall trees shaded the path. Near a bend, Nara heard a faint splash. Fallen branches had blocked the channel, sending its ' },
+        { text: 'banyu', vocabularyId: vocabularyIds.banyu },
+        { text: ', water, into a shallow pool instead of toward the garden. Her grandmother smiled at the discovery. They left the heavy branches alone and went home to ask the neighbors for help.' },
+      ],
+    },
+    {
+      segments: [
+        { text: 'That evening, the neighbors gathered beside the old bench. Nara usually listened quietly, but she chose to be ' },
+        { text: 'wani', vocabularyId: vocabularyIds.wani },
+        { text: ', brave, and show them her map. The next morning, several adults cleared the blockage while Nara and the other children tidied the garden paths. Soon ' },
+        { text: 'banyu', vocabularyId: vocabularyIds.banyu },
+        { text: ' flowed along the channel again. Nara stayed beside her seedlings, listening to the sound that had been missing.' },
+      ],
+    },
+    {
+      segments: [
+        { text: 'Weeks later, the first vegetables were ready. The neighbors made a pot of soup, and Grandfather added a small pinch of ' },
+        { text: 'uyah', vocabularyId: vocabularyIds.uyah },
+        { text: ', salt, before everyone shared a meal beside the garden. Nara saved a few ' },
+        { text: 'wiji', vocabularyId: vocabularyIds.wiji },
+        { text: ' in her jar for the next planting. On its lid she wrote a reminder: small things grow when people care for them together. This time, she added the watering channel to her map.' },
+      ],
+    },
+  ];
+
+  for (const [index, content] of pages.entries()) {
+    const order = index + 1;
+
+    await prisma.storyPage.upsert({
+      where: { storyId_order: { storyId: story.id, order } },
+      update: { content },
+      create: { storyId: story.id, order, content },
+    });
+  }
 }
+
+async function main() {
+  try {
+    await seedAchievements();
+    await seedLanguages();
+    await seedLearning();
+    await seedStory();
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+await main();

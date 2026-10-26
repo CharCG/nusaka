@@ -42,6 +42,7 @@ model User {
   achievements     UserAchievement[]
   lessonAttempts   LessonAttempt[]
   lessonProgresses LessonProgress[]
+  storyProgresses  StoryProgress[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -108,7 +109,9 @@ model Language {
   code String @unique
   name String
 
-  units Unit[]
+  units        Unit[]
+  vocabularies Vocabulary[]
+  stories      Story[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -197,4 +200,55 @@ model LessonProgress {
   lesson Lesson @relation(fields: [lessonId], references: [id])
 
   @@id([userId, lessonId])
+}
+
+model Vocabulary {
+  id           String  @id @default(uuid())
+  languageId   String
+  word         String
+  meaning      String
+  usageExample String?
+  audioUrl     String?
+
+  language Language @relation(fields: [languageId], references: [id])
+
+  @@index([languageId, word])
+}
+
+model Story {
+  id          String  @id @default(uuid())
+  languageId  String
+  title       String
+  description String?
+
+  pages      StoryPage[]
+  progresses StoryProgress[]
+
+  language Language @relation(fields: [languageId], references: [id])
+
+  @@index([languageId])
+}
+
+model StoryPage {
+  id      String @id @default(uuid())
+  storyId String
+  order   Int
+  content Json
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, order])
+}
+
+model StoryProgress {
+  userId  String
+  storyId String
+
+  unlockedAt  DateTime  @default(now())
+  completedAt DateTime?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story Story @relation(fields: [storyId], references: [id])
+
+  @@id([userId, storyId])
 }

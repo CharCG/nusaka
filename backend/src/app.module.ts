@@ -10,6 +10,8 @@ import { LanguagesModule } from './modules/learning/languages/languages.module.j
 import { LessonsModule } from './modules/learning/lessons/lessons.module.js';
 import { LivesModule } from './modules/lives/lives.module.js';
 import { StreaksModule } from './modules/streaks/streaks.module.js';
+import { VocabulariesModule } from './modules/learning/vocabularies/vocabularies.module.js';
+import { StoriesModule } from './modules/learning/stories/stories.module.js';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { StreaksModule } from './modules/streaks/streaks.module.js';
     LessonsModule,
     LivesModule,
     StreaksModule,
+    VocabulariesModule,
+    StoriesModule,
   ],
   controllers: [AppController],
 })
