@@ -1,0 +1,2 @@
+export const LIVES_DAILY_REGENERATION = 5;
+export const LIVES_DAILY_REGENERATION_MAX = 25;

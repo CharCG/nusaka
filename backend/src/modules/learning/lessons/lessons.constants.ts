@@ -1,0 +1,4 @@
+export const LESSON_COMPLETION_XP = 10;
+export const LESSON_PERFECT_COMPLETION_BONUS_XP = 5;
+export const LESSON_COMPLETION_LIVES = 5;
+export const LESSON_COMPLETION_GEMS = 5;
