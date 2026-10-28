@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { JwtService } from '@nestjs/jwt';
@@ -57,6 +51,26 @@ export class AuthService {
         nickname,
         email,
         passwordHash,
+        stats: {
+          create: {},
+        },
+        inventory: {
+          create: {},
+        },
+        achievements: {
+          create: {
+            achievement: {
+              connectOrCreate: {
+                where: { code: 'FIRST_STEP' },
+                create: {
+                  code: 'FIRST_STEP',
+                  name: 'First Step',
+                  description: '',
+                },
+              },
+            },
+          },
+        },
       },
       select: {
         id: true,
