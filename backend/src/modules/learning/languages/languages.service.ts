@@ -16,9 +16,9 @@ export class LanguagesService {
     });
   }
 
-  async findPath(userId: string, code: string) {
+  async findPath(userId: string, languageCode: string) {
     const language = await this.prismaService.language.findUnique({
-      where: { code },
+      where: { code: languageCode },
       select: {
         id: true,
         code: true,

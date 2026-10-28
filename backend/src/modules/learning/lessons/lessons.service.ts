@@ -5,6 +5,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import {
+  LESSON_COMPLETION_XP,
+  LESSON_PERFECT_COMPLETION_BONUS_XP,
+  LESSON_COMPLETION_LIVES,
+  LESSON_COMPLETION_GEMS,
+} from './lessons.constants.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { StreaksService } from '../../streaks/streaks.service.js';
 import { StartLessonDto } from './dto/start-lesson.dto.js';
@@ -18,7 +24,7 @@ export class LessonsService {
     private readonly streaksService: StreaksService,
   ) {}
 
-  async startLesson(userId: string, lessonId: string, dto: StartLessonDto) {
+  async start(userId: string, lessonId: string, dto: StartLessonDto) {
     try {
       return await this.prismaService.withTransactionRetry(async (tx) => {
         const existingAttempt = await tx.lessonAttempt.findUnique({
@@ -44,7 +50,7 @@ export class LessonsService {
         }
 
         if (stats.lives < 1) {
-          throw new BadRequestException('At least 1 life is required to start a lesson');
+          throw new BadRequestException('Not enough lives to start the lesson');
         }
 
         const lesson = await tx.lesson.findUnique({
@@ -191,7 +197,7 @@ export class LessonsService {
     }
   }
 
-  async finishLessonAttempt(userId: string, lessonAttemptId: string, dto: FinishLessonAttemptDto) {
+  async finish(userId: string, lessonAttemptId: string, dto: FinishLessonAttemptDto) {
     return this.prismaService.withTransactionRetry(async (tx) => {
       const now = new Date();
 
@@ -211,11 +217,11 @@ export class LessonsService {
       }
 
       if (dto.mistakes > attempt.initialLives) {
-        throw new BadRequestException('Mistakes cannot exceed the initial Lives');
+        throw new BadRequestException('Mistakes cannot exceed the initial lives');
       }
 
       if (dto.completed && dto.mistakes >= attempt.initialLives) {
-        throw new BadRequestException('Lesson cannot be completed after running out of Lives');
+        throw new BadRequestException('Lesson cannot be completed after running out of lives');
       }
 
       const stats = await tx.userStats.findUnique({
@@ -249,9 +255,11 @@ export class LessonsService {
         firstCompletion = progress.count === 1;
       }
 
-      const xpReward = firstCompletion ? 10 + (dto.mistakes === 0 ? 5 : 0) : 0;
-      const livesReward = firstCompletion ? 5 : 0;
-      const gemsReward = firstCompletion ? 5 : 0;
+      const xpReward = firstCompletion
+        ? LESSON_COMPLETION_XP + (dto.mistakes === 0 ? LESSON_PERFECT_COMPLETION_BONUS_XP : 0)
+        : 0;
+      const livesReward = firstCompletion ? LESSON_COMPLETION_LIVES : 0;
+      const gemsReward = firstCompletion ? LESSON_COMPLETION_GEMS : 0;
 
       await tx.userStats.update({
         where: { userId },

@@ -12,12 +12,12 @@ export class LessonsController {
   constructor(private readonly lessonsService: LessonsService) {}
 
   @Post(':lessonId/start')
-  startLesson(
+  start(
     @CurrentUser() user: CurrentUserDto,
     @Param('lessonId', ParseUUIDPipe) lessonId: string,
     @Body() dto: StartLessonDto,
   ) {
-    return this.lessonsService.startLesson(user.id, lessonId, dto);
+    return this.lessonsService.start(user.id, lessonId, dto);
   }
 
   @Post('attempts/:lessonAttemptId/finish')
@@ -27,6 +27,6 @@ export class LessonsController {
     @Param('lessonAttemptId', ParseUUIDPipe) lessonAttemptId: string,
     @Body() dto: FinishLessonAttemptDto,
   ) {
-    return this.lessonsService.finishLessonAttempt(user.id, lessonAttemptId, dto);
+    return this.lessonsService.finish(user.id, lessonAttemptId, dto);
   }
 }

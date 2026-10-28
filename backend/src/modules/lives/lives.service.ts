@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { LIVES_DAILY_REGENERATION, LIVES_DAILY_REGENERATION_MAX } from './lives.constants.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Cron } from '@nestjs/schedule';
 
@@ -22,10 +23,10 @@ export class LivesService implements OnApplicationBootstrap {
         UPDATE "UserStats"
         SET
           "lives" = CASE
-            WHEN "lives" >= 25 THEN "lives"
+            WHEN "lives" >= ${LIVES_DAILY_REGENERATION_MAX} THEN "lives"
             ELSE LEAST(
-              25,
-              "lives" + 5 * (
+              ${LIVES_DAILY_REGENERATION_MAX},
+              "lives" + ${LIVES_DAILY_REGENERATION} * (
                 (NOW() AT TIME ZONE 'UTC')::date - ("lastLivesRegenAt" AT TIME ZONE 'UTC')::date
               )
             )

@@ -14,8 +14,8 @@ export class LanguagesController {
     return this.languagesService.findAll();
   }
 
-  @Get(':code/path')
-  findPath(@CurrentUser() user: CurrentUserDto, @Param('code') code: string) {
-    return this.languagesService.findPath(user.id, code);
+  @Get(':languageCode/path')
+  findPath(@CurrentUser() user: CurrentUserDto, @Param('languageCode') languageCode: string) {
+    return this.languagesService.findPath(user.id, languageCode);
   }
 }
