@@ -8,6 +8,7 @@ import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { Prisma } from '../../generated/prisma/client.js';
 
 import argon2 from 'argon2';
 import crypto from 'crypto';
@@ -46,42 +47,50 @@ export class AuthService {
 
     const passwordHash = await argon2.hash(dto.password);
 
-    return this.prismaService.user.create({
-      data: {
-        username,
-        nickname,
-        email,
-        passwordHash,
-        stats: {
-          create: {},
-        },
-        inventory: {
-          create: {},
-        },
-        achievements: {
-          create: {
-            achievement: {
-              connectOrCreate: {
-                where: { code: 'FIRST_STEP' },
-                create: {
-                  code: 'FIRST_STEP',
-                  name: 'First Step',
-                  description: 'Create your account',
+    try {
+      return await this.prismaService.user.create({
+        data: {
+          username,
+          nickname,
+          email,
+          passwordHash,
+          stats: {
+            create: {},
+          },
+          inventory: {
+            create: {},
+          },
+          achievements: {
+            create: {
+              achievement: {
+                connectOrCreate: {
+                  where: { code: 'FIRST_STEP' },
+                  create: {
+                    code: 'FIRST_STEP',
+                    name: 'First Step',
+                    description: 'Create your account',
+                  },
                 },
               },
             },
           },
         },
-      },
-      select: {
-        id: true,
-        username: true,
-        nickname: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    });
+        select: {
+          id: true,
+          username: true,
+          nickname: true,
+          email: true,
+          role: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Unable to create your account. Please try again');
+      }
+
+      throw error;
+    }
   }
 
   async login(dto: LoginDto) {
