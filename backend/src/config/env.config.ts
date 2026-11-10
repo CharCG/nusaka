@@ -6,4 +6,12 @@ export const envSchema = z.object({
   ALLOWED_ORIGINS: z.string().trim().min(1),
   DATABASE_URL: z.string().trim().url(),
   DIRECT_URL: z.string().trim().url(),
+  JWT_SECRET: z.string().trim().min(1),
+  JWT_ACCESS_EXPIRES_IN: z
+    .string()
+    .trim()
+    .regex(/^[1-9]\d{0,5}[smhdw]$/),
+  RESEND_API_KEY: z.string().min(1),
+  EMAIL_FROM: z.string().min(1),
+  FRONTEND_URL: z.string().url(),
 });
