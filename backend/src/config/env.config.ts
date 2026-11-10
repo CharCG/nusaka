@@ -7,5 +7,8 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().trim().url(),
   DIRECT_URL: z.string().trim().url(),
   JWT_SECRET: z.string().trim().min(1),
-  JWT_ACCESS_EXPIRES_IN: z.string().trim().min(1),
+  JWT_ACCESS_EXPIRES_IN: z
+    .string()
+    .trim()
+    .regex(/^[1-9]\d{0,5}[smhdw]$/),
 });
