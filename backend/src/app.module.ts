@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './modules/prisma/prisma.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
 import { envSchema } from './config/env.config.js';
 
 @Module({
@@ -12,6 +13,7 @@ import { envSchema } from './config/env.config.js';
       validate: (env) => envSchema.parse(env),
     }),
     PrismaModule,
+    AuthModule,
   ],
   controllers: [AppController],
 })
