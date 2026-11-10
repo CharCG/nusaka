@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './modules/prisma/prisma.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { MailModule } from './modules/mail/mail.module.js';
+import { UsersModule } from './modules/users/users.module.js';
 import { envSchema } from './config/env.config.js';
 
 @Module({
@@ -16,6 +17,7 @@ import { envSchema } from './config/env.config.js';
     PrismaModule,
     AuthModule,
     MailModule,
+    UsersModule,
   ],
   controllers: [AppController],
 })
