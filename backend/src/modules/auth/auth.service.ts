@@ -52,6 +52,26 @@ export class AuthService {
         nickname,
         email,
         passwordHash,
+        stats: {
+          create: {},
+        },
+        inventory: {
+          create: {},
+        },
+        achievements: {
+          create: {
+            achievement: {
+              connectOrCreate: {
+                where: { code: 'FIRST_STEP' },
+                create: {
+                  code: 'FIRST_STEP',
+                  name: 'First Step',
+                  description: 'Create your account',
+                },
+              },
+            },
+          },
+        },
       },
       select: {
         id: true,
