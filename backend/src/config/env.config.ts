@@ -11,4 +11,7 @@ export const envSchema = z.object({
     .string()
     .trim()
     .regex(/^[1-9]\d{0,5}[smhdw]$/),
+  RESEND_API_KEY: z.string().min(1),
+  EMAIL_FROM: z.string().min(1),
+  FRONTEND_URL: z.string().url(),
 });

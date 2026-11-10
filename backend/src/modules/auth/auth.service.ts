@@ -1,11 +1,16 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { PASSWORD_RESET_TOKEN_TTL_MS } from './auth.constants.js';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { JwtService } from '@nestjs/jwt';
+import { MailService } from '../mail/mail.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 
 import argon2 from 'argon2';
+import crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +18,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -82,5 +88,87 @@ export class AuthService {
     return {
       accessToken,
     };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const email = dto.email.trim().toLowerCase();
+
+    const user = await this.prismaService.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      return;
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
+
+    await this.prismaService.$transaction([
+      this.prismaService.passwordResetToken.deleteMany({
+        where: { userId: user.id },
+      }),
+
+      this.prismaService.passwordResetToken.create({
+        data: {
+          tokenHash,
+          expiresAt,
+          userId: user.id,
+        },
+      }),
+    ]);
+
+    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+    const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
+
+    await this.mailService.sendPasswordReset(user.email, resetUrl);
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const tokenHash = crypto.createHash('sha256').update(dto.token).digest('hex');
+
+    const resetToken = await this.prismaService.passwordResetToken.findUnique({
+      where: {
+        tokenHash,
+      },
+      select: {
+        id: true,
+        userId: true,
+        expiresAt: true,
+      },
+    });
+
+    if (!resetToken || resetToken.expiresAt <= new Date()) {
+      throw new BadRequestException('Invalid or expired password reset token');
+    }
+
+    const passwordHash = await argon2.hash(dto.password);
+
+    await this.prismaService.$transaction(async (tx) => {
+      const consumed = await tx.passwordResetToken.deleteMany({
+        where: {
+          id: resetToken.id,
+          expiresAt: { gt: new Date() },
+        },
+      });
+
+      if (consumed.count !== 1) {
+        throw new BadRequestException('Invalid or expired password reset token');
+      }
+
+      await tx.user.update({
+        where: { id: resetToken.userId },
+        data: { passwordHash },
+      });
+
+      await tx.passwordResetToken.deleteMany({
+        where: { userId: resetToken.userId },
+      });
+    });
   }
 }

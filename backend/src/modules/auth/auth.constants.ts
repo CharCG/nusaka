@@ -1,0 +1,1 @@
+export const PASSWORD_RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
