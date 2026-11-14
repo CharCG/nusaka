@@ -12,14 +12,18 @@ import {
   LESSON_COMPLETION_GEMS,
 } from './lessons.constants.js';
 import { evaluateAttempt } from './lessons.util.js';
-import { PrismaService } from '../../prisma/prisma.service.js';
 import { StartLessonDto } from './dto/start-lesson.dto.js';
 import { FinishLessonAttemptDto } from './dto/finish-lesson-attempt.dto.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { StreaksService } from '../../streaks/streaks.service.js';
 import { LessonAttemptStatus, Prisma, type LessonAttempt } from '../../../generated/prisma/client.js';
 
 @Injectable()
 export class LessonsService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly streaksService: StreaksService,
+  ) {}
 
   async startLessonAttempt(userId: string, lessonId: string, dto: StartLessonDto) {
     try {
@@ -202,7 +206,10 @@ export class LessonsService {
           const result = evaluateAttempt(exercises, dto.answers);
           const status = result.completed ? LessonAttemptStatus.COMPLETED : LessonAttemptStatus.FAILED;
 
+          const now = new Date();
+
           let firstCompletion = false;
+
           if (status === LessonAttemptStatus.COMPLETED) {
             const progress = await tx.lessonProgress.createMany({
               data: [
@@ -215,6 +222,8 @@ export class LessonsService {
             });
 
             firstCompletion = progress.count === 1;
+
+            await this.streaksService.recordStreakActivity(tx, userId, now);
           }
 
           const xpReward = firstCompletion
@@ -239,7 +248,7 @@ export class LessonsService {
             data: {
               status,
               mistakes: result.mistakes,
-              finishedAt: new Date(),
+              finishedAt: now,
             },
           });
 

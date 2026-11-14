@@ -8,12 +8,16 @@ import {
 import { STORY_COMPLETION_XP, STORY_UNLOCK_COST_GEMS } from './stories.constants.js';
 import { FindStoriesQueryDto } from './dto/find-stories-query.dto.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { StreaksService } from '../../streaks/streaks.service.js';
 import { Paginated } from '../../../common/dto/paginated-response.dto.js';
 import { Prisma } from '../../../generated/prisma/client.js';
 
 @Injectable()
 export class StoriesService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly streaksService: StreaksService,
+  ) {}
 
   async findAll(userId: string, dto: FindStoriesQueryDto) {
     const [stories, total] = await Promise.all([
@@ -248,6 +252,8 @@ export class StoriesService {
               },
             });
           }
+
+          await this.streaksService.recordStreakActivity(tx, userId, now);
 
           const stats = await tx.userStats.findUnique({
             where: { userId },
