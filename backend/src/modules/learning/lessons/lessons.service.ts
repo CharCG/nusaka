@@ -8,7 +8,7 @@ import {
 import {
   LESSON_COMPLETION_XP,
   LESSON_PERFECT_COMPLETION_BONUS_XP,
-  LESSON_COMPLETION_LIVES,
+  LESSON_COMPLETION_ENERGY,
   LESSON_COMPLETION_GEMS,
 } from './lessons.constants.js';
 import { evaluateAttempt } from './lessons.util.js';
@@ -40,15 +40,15 @@ export class LessonsService {
 
           const stats = await tx.userStats.findUnique({
             where: { userId },
-            select: { lives: true },
+            select: { energy: true },
           });
 
           if (!stats) {
             throw new NotFoundException('User stats not found');
           }
 
-          if (stats.lives < 1) {
-            throw new BadRequestException('Not enough lives to start the lesson');
+          if (stats.energy < 1) {
+            throw new BadRequestException('Not enough energy to start the lesson');
           }
 
           const lesson = await tx.lesson.findUnique({
@@ -117,13 +117,18 @@ export class LessonsService {
             }
           }
 
+          await tx.userStats.update({
+            where: { userId },
+            data: { energy: { decrement: 1 } },
+          });
+
           await tx.lessonAttempt.updateMany({
             where: {
               userId,
               status: LessonAttemptStatus.IN_PROGRESS,
             },
             data: {
-              status: LessonAttemptStatus.ABANDONED,
+              status: LessonAttemptStatus.FAILED,
               finishedAt: new Date(),
             },
           });
@@ -133,7 +138,6 @@ export class LessonsService {
               userId,
               lessonId,
               requestId: dto.requestId,
-              initialLives: stats.lives,
             },
           });
 
@@ -195,29 +199,10 @@ export class LessonsService {
             throw new BadRequestException('Lesson does not contain any exercises');
           }
 
-          const result = evaluateAttempt(exercises, dto.answers, attempt.initialLives);
-
-          const stats = await tx.userStats.findUnique({
-            where: { userId },
-            select: { lives: true },
-          });
-
-          if (!stats) {
-            throw new NotFoundException('User stats not found');
-          }
-
-          if (stats.lives < result.mistakes) {
-            throw new ConflictException('Lives have changed. Please try again');
-          }
-
-          const status = result.completed
-            ? LessonAttemptStatus.COMPLETED
-            : result.mistakes === attempt.initialLives
-              ? LessonAttemptStatus.FAILED
-              : LessonAttemptStatus.ABANDONED;
+          const result = evaluateAttempt(exercises, dto.answers);
+          const status = result.completed ? LessonAttemptStatus.COMPLETED : LessonAttemptStatus.FAILED;
 
           let firstCompletion = false;
-
           if (status === LessonAttemptStatus.COMPLETED) {
             const progress = await tx.lessonProgress.createMany({
               data: [
@@ -235,17 +220,19 @@ export class LessonsService {
           const xpReward = firstCompletion
             ? LESSON_COMPLETION_XP + (result.mistakes === 0 ? LESSON_PERFECT_COMPLETION_BONUS_XP : 0)
             : 0;
-          const livesReward = firstCompletion ? LESSON_COMPLETION_LIVES : 0;
+          const energyReward = firstCompletion ? LESSON_COMPLETION_ENERGY : 0;
           const gemsReward = firstCompletion ? LESSON_COMPLETION_GEMS : 0;
 
-          await tx.userStats.update({
-            where: { userId },
-            data: {
-              xp: { increment: xpReward },
-              lives: { increment: livesReward - result.mistakes },
-              gems: { increment: gemsReward },
-            },
-          });
+          if (firstCompletion) {
+            await tx.userStats.update({
+              where: { userId },
+              data: {
+                xp: { increment: xpReward },
+                energy: { increment: energyReward },
+                gems: { increment: gemsReward },
+              },
+            });
+          }
 
           const finishedAttempt = await tx.lessonAttempt.update({
             where: { id: attempt.id },
@@ -316,10 +303,19 @@ export class LessonsService {
       },
     });
 
+    const stats = await tx.userStats.findUnique({
+      where: { userId: lessonAttempt.userId },
+      select: { energy: true },
+    });
+
+    if (!stats) {
+      throw new NotFoundException('User stats not found');
+    }
+
     return {
       attemptId: lessonAttempt.id,
       status: lessonAttempt.status,
-      initialLives: lessonAttempt.initialLives,
+      energy: stats.energy,
       isReplay: progress !== null,
       lesson,
     };
@@ -330,7 +326,7 @@ export class LessonsService {
       where: { userId: lessonAttempt.userId },
       select: {
         xp: true,
-        lives: true,
+        energy: true,
         gems: true,
       },
     });

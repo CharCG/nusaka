@@ -17,7 +17,13 @@ export class UsersService {
         email: true,
         role: true,
         createdAt: true,
-        stats: true,
+        stats: {
+          select: {
+            xp: true,
+            energy: true,
+            gems: true,
+          },
+        },
         inventory: true,
         achievements: {
           select: {

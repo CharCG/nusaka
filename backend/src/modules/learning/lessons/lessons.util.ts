@@ -69,7 +69,7 @@ function isCorrectAnswer(exercise: LessonExercise, answer: Record<string, unknow
   }
 }
 
-export function evaluateAttempt(exercises: LessonExercise[], answers: ExerciseAnswerDto[], initialLives: number) {
+export function evaluateAttempt(exercises: LessonExercise[], answers: ExerciseAnswerDto[]) {
   const queue = [...exercises];
   let mistakes = 0;
 
@@ -78,10 +78,6 @@ export function evaluateAttempt(exercises: LessonExercise[], answers: ExerciseAn
 
     if (!exercise) {
       throw new BadRequestException('All exercises have already been completed');
-    }
-
-    if (mistakes >= initialLives) {
-      throw new BadRequestException('Not enough lives remaining to continue the lesson attempt');
     }
 
     if (entry.exerciseId !== exercise.id) {
