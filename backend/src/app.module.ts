@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './modules/prisma/prisma.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { MailModule } from './modules/mail/mail.module.js';
@@ -8,6 +9,7 @@ import { UsersModule } from './modules/users/users.module.js';
 import { LanguagesModule } from './modules/learning/languages/languages.module.js';
 import { LessonsModule } from './modules/learning/lessons/lessons.module.js';
 import { StoriesModule } from './modules/learning/stories/stories.module.js';
+import { EnergiesModule } from './modules/energies/energies.module.js';
 import { envSchema } from './config/env.config.js';
 
 @Module({
@@ -17,6 +19,7 @@ import { envSchema } from './config/env.config.js';
       envFilePath: '.env',
       validate: (env) => envSchema.parse(env),
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
     MailModule,
@@ -24,6 +27,7 @@ import { envSchema } from './config/env.config.js';
     LanguagesModule,
     LessonsModule,
     StoriesModule,
+    EnergiesModule,
   ],
   controllers: [AppController],
 })
