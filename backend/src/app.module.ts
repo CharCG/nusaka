@@ -10,6 +10,7 @@ import { LanguagesModule } from './modules/learning/languages/languages.module.j
 import { LessonsModule } from './modules/learning/lessons/lessons.module.js';
 import { StoriesModule } from './modules/learning/stories/stories.module.js';
 import { EnergiesModule } from './modules/energies/energies.module.js';
+import { StreaksModule } from './modules/streaks/streaks.module.js';
 import { envSchema } from './config/env.config.js';
 
 @Module({
@@ -28,6 +29,7 @@ import { envSchema } from './config/env.config.js';
     LessonsModule,
     StoriesModule,
     EnergiesModule,
+    StreaksModule,
   ],
   controllers: [AppController],
 })
