@@ -22,6 +22,8 @@ export class UsersService {
             xp: true,
             energy: true,
             gems: true,
+            currentStreak: true,
+            longestStreak: true,
           },
         },
         inventory: true,
