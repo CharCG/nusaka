@@ -9,7 +9,6 @@ import { UsersModule } from './modules/users/users.module.js';
 import { LanguagesModule } from './modules/learning/languages/languages.module.js';
 import { LessonsModule } from './modules/learning/lessons/lessons.module.js';
 import { StoriesModule } from './modules/learning/stories/stories.module.js';
-import { EnergiesModule } from './modules/energies/energies.module.js';
 import { StreaksModule } from './modules/streaks/streaks.module.js';
 import { RewardsModule } from './modules/rewards/rewards.module.js';
 import { envSchema } from './config/env.config.js';
@@ -29,7 +28,6 @@ import { envSchema } from './config/env.config.js';
     LanguagesModule,
     LessonsModule,
     StoriesModule,
-    EnergiesModule,
     StreaksModule,
     RewardsModule,
   ],
