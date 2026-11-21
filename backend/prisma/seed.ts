@@ -321,12 +321,53 @@ async function seedStories() {
   }
 }
 
+async function seedShopItems() {
+  const items = [
+    { code: 'ENERGY_5', type: 'ENERGY' as const, name: '5 Energy', amount: 5, price: 10, sortOrder: 1 },
+    { code: 'ENERGY_15', type: 'ENERGY' as const, name: '15 Energy', amount: 15, price: 25, sortOrder: 2 },
+    { code: 'ENERGY_30', type: 'ENERGY' as const, name: '30 Energy', amount: 30, price: 45, sortOrder: 3 },
+    {
+      code: 'STREAK_FREEZE_1',
+      type: 'STREAK_FREEZE' as const,
+      name: '1 Streak Freeze',
+      amount: 1,
+      price: 20,
+      sortOrder: 1,
+    },
+    {
+      code: 'STREAK_FREEZE_3',
+      type: 'STREAK_FREEZE' as const,
+      name: '3 Streak Freezes',
+      amount: 3,
+      price: 50,
+      sortOrder: 2,
+    },
+    {
+      code: 'STREAK_FREEZE_7',
+      type: 'STREAK_FREEZE' as const,
+      name: '7 Streak Freezes',
+      amount: 7,
+      price: 100,
+      sortOrder: 3,
+    },
+  ];
+
+  for (const item of items) {
+    await prisma.shopItem.upsert({
+      where: { code: item.code },
+      update: item,
+      create: item,
+    });
+  }
+}
+
 async function main() {
   try {
     await seedAchievements();
     await seedLanguages();
     await seedLessons();
     await seedStories();
+    await seedShopItems();
   } finally {
     await prisma.$disconnect();
   }
