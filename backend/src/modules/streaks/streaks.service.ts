@@ -65,14 +65,14 @@ export class StreaksService implements OnApplicationBootstrap {
           );
         } catch (error) {
           this.logger.error(
-            `Unable to process streak for user ${userId}, retry on the next scheduled run`,
+            `Failed to reconcile streak for user ${userId}`,
             error instanceof Error ? (error.stack ?? error.message) : String(error),
           );
         }
       }
     } catch (error) {
       this.logger.error(
-        'Unable to process daily streaks, retry on the next scheduled run',
+        'Failed to process daily streaks',
         error instanceof Error ? (error.stack ?? error.message) : String(error),
       );
     }
