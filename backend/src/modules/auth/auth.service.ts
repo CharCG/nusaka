@@ -1,13 +1,13 @@
 import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PASSWORD_RESET_TOKEN_TTL_MS } from './auth.constants.js';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service.js';
-import { JwtService } from '@nestjs/jwt';
-import { MailService } from '../mail/mail.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { JwtService } from '@nestjs/jwt';
+import { MailService } from '../mail/mail.service.js';
 import { Prisma } from '../../generated/prisma/client.js';
 
 import argon2 from 'argon2';
@@ -38,11 +38,11 @@ export class AuthService {
     });
 
     if (existingUser?.username === username) {
-      throw new ConflictException('Username is already taken');
+      throw new ConflictException('Username already taken');
     }
 
     if (existingUser?.email === email) {
-      throw new ConflictException('Email is already registered');
+      throw new ConflictException('Email already registered');
     }
 
     const passwordHash = await argon2.hash(dto.password);
@@ -86,7 +86,7 @@ export class AuthService {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('Unable to create your account. Please try again');
+        throw new ConflictException('Username or email already taken');
       }
 
       throw error;

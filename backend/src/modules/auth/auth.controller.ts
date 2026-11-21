@@ -22,18 +22,12 @@ export class AuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    await this.authService.forgotPassword(dto);
-    return {
-      message: 'If the email is registered, a password reset link has been sent',
-    };
+    return this.authService.forgotPassword(dto);
   }
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    await this.authService.resetPassword(dto);
-    return {
-      message: 'Password has been reset successfully',
-    };
+    return this.authService.resetPassword(dto);
   }
 }
