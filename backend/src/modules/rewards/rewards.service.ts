@@ -44,7 +44,7 @@ export class RewardsService {
         const today = utcDay(new Date());
 
         if (stats.lastDailyRewardDate && stats.lastDailyRewardDate.getTime() >= today.getTime()) {
-          throw new ConflictException('Daily reward has already been claimed today');
+          throw new ConflictException('Daily reward already claimed');
         }
 
         const energyReward = DAILY_REWARD_ENERGY;
