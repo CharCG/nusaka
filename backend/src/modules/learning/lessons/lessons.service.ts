@@ -52,7 +52,7 @@ export class LessonsService {
           }
 
           if (stats.energy < 1) {
-            throw new BadRequestException('Not enough energy to start the lesson');
+            throw new BadRequestException('Insufficient energy');
           }
 
           const lesson = await tx.lesson.findUnique({
@@ -77,7 +77,7 @@ export class LessonsService {
           }
 
           if (lesson._count.exercises === 0) {
-            throw new BadRequestException('Lesson does not contain any exercises');
+            throw new BadRequestException('Lesson has no exercises');
           }
 
           const progress = await tx.lessonProgress.findUnique({
@@ -116,7 +116,7 @@ export class LessonsService {
               });
 
               if (!previousProgress) {
-                throw new ForbiddenException('Lesson is locked');
+                throw new ForbiddenException('Lesson locked');
               }
             }
           }
@@ -168,7 +168,7 @@ export class LessonsService {
       }
 
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
-        throw new ConflictException('Unable to start the lesson attempt. Please try again');
+        throw new ConflictException('Request conflict');
       }
 
       throw error;
@@ -200,7 +200,7 @@ export class LessonsService {
           });
 
           if (exercises.length === 0) {
-            throw new BadRequestException('Lesson does not contain any exercises');
+            throw new BadRequestException('Lesson has no exercises');
           }
 
           const result = evaluateAttempt(exercises, dto.answers);
@@ -260,7 +260,7 @@ export class LessonsService {
       );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
-        throw new ConflictException('Unable to finish the lesson attempt. Please try again');
+        throw new ConflictException('Request conflict');
       }
 
       throw error;
@@ -273,11 +273,11 @@ export class LessonsService {
     lessonId: string,
   ) {
     if (lessonAttempt.lessonId !== lessonId) {
-      throw new ConflictException('Request ID has already been used. Please try again with new request ID');
+      throw new ConflictException('Request ID already used');
     }
 
     if (lessonAttempt.status !== LessonAttemptStatus.IN_PROGRESS) {
-      throw new ConflictException('Lesson attempt has ended. Please try again with new request ID');
+      throw new ConflictException('Lesson attempt already ended');
     }
 
     const lesson = await tx.lesson.findUnique({

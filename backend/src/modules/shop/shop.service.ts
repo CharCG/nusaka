@@ -62,7 +62,7 @@ export class ShopService {
           }
 
           if (stats.gems < item.price) {
-            throw new BadRequestException('Not enough gems to purchase the item');
+            throw new BadRequestException('Insufficient gems');
           }
 
           await tx.userStats.update({
@@ -93,7 +93,7 @@ export class ShopService {
       );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === 'P2034' || error.code === 'P2002')) {
-        throw new ConflictException('Unable to complete the purchase. Please try again');
+        throw new ConflictException('Request conflict');
       }
 
       throw error;
@@ -131,7 +131,7 @@ export class ShopService {
 
   private async purchaseResponse(tx: Prisma.TransactionClient, purchase: ShopPurchase, itemId: string) {
     if (purchase.shopItemId !== itemId) {
-      throw new ConflictException('Request ID has already been used. Please try again with new request ID');
+      throw new ConflictException('Request ID already used');
     }
 
     const stats = await tx.userStats.findUniqueOrThrow({

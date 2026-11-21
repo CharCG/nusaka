@@ -90,7 +90,7 @@ export class StoriesService {
     }
 
     if (story.progresses.length === 0) {
-      throw new ForbiddenException('Story is locked');
+      throw new ForbiddenException('Story locked');
     }
 
     const pages = await this.prismaService.storyPage.findMany({
@@ -155,11 +155,11 @@ export class StoriesService {
           }
 
           if (story._count.pages === 0) {
-            throw new BadRequestException('Story does not contain any pages');
+            throw new BadRequestException('Story has no pages');
           }
 
           if (stats.gems < STORY_UNLOCK_COST_GEMS) {
-            throw new BadRequestException('Not enough gems to unlock the story');
+            throw new BadRequestException('Insufficient gems');
           }
 
           const updatedStats = await tx.userStats.update({
@@ -189,7 +189,7 @@ export class StoriesService {
       );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === 'P2034' || error.code === 'P2002')) {
-        throw new ConflictException('Unable to unlock the story. Please try again');
+        throw new ConflictException('Request conflict');
       }
 
       throw error;
@@ -224,11 +224,11 @@ export class StoriesService {
           });
 
           if (!progress) {
-            throw new ForbiddenException('Story is locked');
+            throw new ForbiddenException('Story locked');
           }
 
           if (story._count.pages === 0) {
-            throw new BadRequestException('Story does not contain any pages');
+            throw new BadRequestException('Story has no pages');
           }
 
           const now = new Date();
@@ -279,7 +279,7 @@ export class StoriesService {
       );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
-        throw new ConflictException('Unable to complete the story. Please try again');
+        throw new ConflictException('Request conflict');
       }
 
       throw error;
