@@ -16,7 +16,7 @@ function parseAnswer<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
 
   if (!result.success) {
-    throw new BadRequestException('Invalid exercise answer');
+    throw new BadRequestException('Invalid answer');
   }
 
   return result.data;
@@ -77,11 +77,11 @@ export function evaluateAttempt(exercises: LessonExercise[], answers: ExerciseAn
     const exercise = queue[0];
 
     if (!exercise) {
-      throw new BadRequestException('All exercises have already been completed');
+      throw new BadRequestException('Exercises already completed');
     }
 
     if (entry.exerciseId !== exercise.id) {
-      throw new BadRequestException('Exercise answers are out of order');
+      throw new BadRequestException('Invalid answer order');
     }
 
     queue.shift();
