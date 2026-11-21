@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../../generated/prisma/client.js';
 
 @Injectable()
@@ -63,7 +63,7 @@ export class UsersService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new ConflictException('Username is already taken');
+          throw new ConflictException('Username already taken');
         }
 
         if (error.code === 'P2025') {
