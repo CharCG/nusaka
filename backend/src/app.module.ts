@@ -13,6 +13,7 @@ import { StreaksModule } from './modules/streaks/streaks.module.js';
 import { RewardsModule } from './modules/rewards/rewards.module.js';
 import { ShopModule } from './modules/shop/shop.module.js';
 import { QuestsModule } from './modules/quests/quests.module.js';
+import { LeaderboardModule } from './modules/leaderboard/leaderboard.module.js';
 import { envSchema } from './config/env.config.js';
 
 @Module({
@@ -34,6 +35,7 @@ import { envSchema } from './config/env.config.js';
     RewardsModule,
     ShopModule,
     QuestsModule,
+    LeaderboardModule,
   ],
   controllers: [AppController],
 })
