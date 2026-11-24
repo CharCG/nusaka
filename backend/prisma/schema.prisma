@@ -32,6 +32,18 @@ enum ShopItemType {
   STREAK_FREEZE
 }
 
+enum QuestPeriod {
+  DAILY
+  WEEKLY
+}
+
+enum QuestMetric {
+  LESSONS_COMPLETED
+  PERFECT_LESSONS_COMPLETED
+  STORIES_COMPLETED
+  XP_EARNED
+}
+
 model User {
   id           String   @id @default(uuid())
   username     String   @unique
@@ -49,6 +61,7 @@ model User {
   lessonProgresses LessonProgress[]
   storyProgresses  StoryProgress[]
   shopPurchases    ShopPurchase[]
+  userQuests       UserQuest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -279,4 +292,42 @@ model ShopPurchase {
 
   @@unique([userId, requestId])
   @@index([userId, createdAt])
+}
+
+model Quest {
+  id           String      @id @default(uuid())
+  code         String      @unique
+  name         String
+  description  String?
+  period       QuestPeriod
+  metric       QuestMetric
+  target       Int
+  rewardXp     Int         @default(0)
+  rewardGems   Int         @default(0)
+  rewardEnergy Int         @default(0)
+  isActive     Boolean     @default(true)
+  sortOrder    Int         @default(0)
+
+  userQuests UserQuest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, period, sortOrder])
+  @@index([isActive, metric])
+}
+
+model UserQuest {
+  id          String    @id @default(uuid())
+  userId      String
+  questId     String
+  periodStart DateTime  @db.Date
+  progress    Int       @default(0)
+  claimedAt   DateTime?
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quest Quest @relation(fields: [questId], references: [id])
+
+  @@unique([userId, questId, periodStart])
+  @@index([userId, periodStart])
 }
