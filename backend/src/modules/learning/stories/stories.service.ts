@@ -9,6 +9,7 @@ import { STORY_COMPLETION_XP, STORY_UNLOCK_COST_GEMS } from './stories.constants
 import { FindStoriesQueryDto } from './dto/find-stories-query.dto.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { StreaksService } from '../../streaks/streaks.service.js';
+import { QuestsService } from '../../quests/quests.service.js';
 import { Paginated } from '../../../common/dto/paginated-response.dto.js';
 import { Prisma } from '../../../generated/prisma/client.js';
 
@@ -17,6 +18,7 @@ export class StoriesService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly streaksService: StreaksService,
+    private readonly questsService: QuestsService,
   ) {}
 
   async findAll(userId: string, dto: FindStoriesQueryDto) {
@@ -254,6 +256,16 @@ export class StoriesService {
           }
 
           await this.streaksService.recordStreakActivity(tx, userId, now);
+
+          await this.questsService.recordProgress(
+            tx,
+            userId,
+            {
+              STORIES_COMPLETED: 1,
+              XP_EARNED: firstCompletion ? STORY_COMPLETION_XP : undefined,
+            },
+            now,
+          );
 
           const stats = await tx.userStats.findUnique({
             where: { userId },
