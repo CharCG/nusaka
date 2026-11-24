@@ -12,6 +12,7 @@ import { StoriesModule } from './modules/learning/stories/stories.module.js';
 import { StreaksModule } from './modules/streaks/streaks.module.js';
 import { RewardsModule } from './modules/rewards/rewards.module.js';
 import { ShopModule } from './modules/shop/shop.module.js';
+import { QuestsModule } from './modules/quests/quests.module.js';
 import { envSchema } from './config/env.config.js';
 
 @Module({
@@ -32,6 +33,7 @@ import { envSchema } from './config/env.config.js';
     StreaksModule,
     RewardsModule,
     ShopModule,
+    QuestsModule,
   ],
   controllers: [AppController],
 })

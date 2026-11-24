@@ -16,6 +16,7 @@ import { StartLessonDto } from './dto/start-lesson.dto.js';
 import { FinishLessonAttemptDto } from './dto/finish-lesson-attempt.dto.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { StreaksService } from '../../streaks/streaks.service.js';
+import { QuestsService } from '../../quests/quests.service.js';
 import { LessonAttemptStatus, Prisma, type LessonAttempt } from '../../../generated/prisma/client.js';
 
 @Injectable()
@@ -23,6 +24,7 @@ export class LessonsService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly streaksService: StreaksService,
+    private readonly questsService: QuestsService,
   ) {}
 
   async startLessonAttempt(userId: string, lessonId: string, dto: StartLessonDto) {
@@ -231,6 +233,19 @@ export class LessonsService {
             : 0;
           const energyReward = firstCompletion ? LESSON_COMPLETION_ENERGY : 0;
           const gemsReward = firstCompletion ? LESSON_COMPLETION_GEMS : 0;
+
+          if (status === LessonAttemptStatus.COMPLETED) {
+            await this.questsService.recordProgress(
+              tx,
+              userId,
+              {
+                LESSONS_COMPLETED: 1,
+                PERFECT_LESSONS_COMPLETED: result.mistakes === 0 ? 1 : undefined,
+                XP_EARNED: xpReward > 0 ? xpReward : undefined,
+              },
+              now,
+            );
+          }
 
           if (firstCompletion) {
             await tx.userStats.update({
