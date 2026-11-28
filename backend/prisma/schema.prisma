@@ -83,7 +83,7 @@ model PasswordResetToken {
 model UserStats {
   userId        String @id
   xp            Int    @default(0)
-  energy        Int    @default(25)
+  energy        Int    @default(5)
   gems          Int    @default(25)
   currentStreak Int    @default(0)
   longestStreak Int    @default(0)
