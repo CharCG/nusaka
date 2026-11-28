@@ -1,16 +1,11 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { STORY_COMPLETION_XP, STORY_UNLOCK_COST_GEMS } from './stories.constants.js';
 import { FindStoriesQueryDto } from './dto/find-stories-query.dto.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { StreaksService } from '../../streaks/streaks.service.js';
 import { QuestsService } from '../../quests/quests.service.js';
 import { Paginated } from '../../../common/dto/paginated-response.dto.js';
+import { utcDay } from '../../../common/utils/day.util.js';
 import { Prisma } from '../../../generated/prisma/client.js';
 
 @Injectable()
@@ -22,9 +17,11 @@ export class StoriesService {
   ) {}
 
   async findAll(userId: string, dto: FindStoriesQueryDto) {
+    const where: Prisma.StoryWhereInput = dto.languageCode ? { language: { code: dto.languageCode } } : {};
+
     const [stories, total] = await Promise.all([
       this.prismaService.story.findMany({
-        where: dto.languageCode ? { language: { code: dto.languageCode } } : {},
+        where,
         select: {
           id: true,
           title: true,
@@ -51,7 +48,7 @@ export class StoriesService {
         skip: dto.skip,
         take: dto.limit,
       }),
-      this.prismaService.story.count({ where: dto.languageCode ? { language: { code: dto.languageCode } } : {} }),
+      this.prismaService.story.count({ where }),
     ]);
 
     const items = stories.map((story) => {
@@ -113,85 +110,93 @@ export class StoriesService {
   }
 
   async unlockStory(userId: string, storyId: string) {
+    const story = await this.prismaService.story.findUnique({
+      where: { id: storyId },
+      select: {
+        _count: {
+          select: { pages: true },
+        },
+      },
+    });
+
+    if (!story) {
+      throw new NotFoundException('Story not found');
+    }
+
     try {
-      return await this.prismaService.$transaction(
-        async (tx) => {
-          const story = await tx.story.findUnique({
-            where: { id: storyId },
-            select: {
-              _count: {
-                select: { pages: true },
-              },
-            },
-          });
-
-          if (!story) {
-            throw new NotFoundException('Story not found');
-          }
-
-          const progress = await tx.storyProgress.findUnique({
-            where: {
-              userId_storyId: {
-                userId,
-                storyId,
-              },
-            },
-            select: { userId: true },
-          });
-
-          const stats = await tx.userStats.findUnique({
-            where: { userId },
-            select: { gems: true },
-          });
-
-          if (!stats) {
-            throw new NotFoundException('User stats not found');
-          }
-
-          if (progress) {
-            return {
-              storyId,
-              isUnlocked: true,
-              gems: stats.gems,
-            };
-          }
-
-          if (story._count.pages === 0) {
-            throw new BadRequestException('Story has no pages');
-          }
-
-          if (stats.gems < STORY_UNLOCK_COST_GEMS) {
-            throw new BadRequestException('Insufficient gems');
-          }
-
-          const updatedStats = await tx.userStats.update({
-            where: { userId },
-            data: {
-              gems: { decrement: STORY_UNLOCK_COST_GEMS },
-            },
-            select: { gems: true },
-          });
-
-          await tx.storyProgress.create({
-            data: {
+      return await this.prismaService.runSerializableTransaction(async (tx) => {
+        const progress = await tx.storyProgress.findUnique({
+          where: {
+            userId_storyId: {
               userId,
               storyId,
             },
-          });
+          },
+          select: { userId: true },
+        });
 
+        const stats = await tx.userStats.findUnique({
+          where: { userId },
+          select: { gems: true },
+        });
+
+        if (!stats) {
+          throw new NotFoundException('User stats not found');
+        }
+
+        if (progress) {
           return {
             storyId,
             isUnlocked: true,
-            gems: updatedStats.gems,
+            gems: stats.gems,
           };
-        },
-        {
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        },
-      );
+        }
+
+        if (story._count.pages === 0) {
+          throw new BadRequestException('Story has no pages');
+        }
+
+        if (stats.gems < STORY_UNLOCK_COST_GEMS) {
+          throw new BadRequestException('Insufficient gems');
+        }
+
+        const updatedStats = await tx.userStats.update({
+          where: { userId },
+          data: {
+            gems: { decrement: STORY_UNLOCK_COST_GEMS },
+          },
+          select: { gems: true },
+        });
+
+        await tx.storyProgress.create({
+          data: {
+            userId,
+            storyId,
+          },
+        });
+
+        return {
+          storyId,
+          isUnlocked: true,
+          gems: updatedStats.gems,
+        };
+      });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === 'P2034' || error.code === 'P2002')) {
-        throw new ConflictException('Request conflict');
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const stats = await this.prismaService.userStats.findUnique({
+          where: { userId },
+          select: { gems: true },
+        });
+
+        if (!stats) {
+          throw new NotFoundException('User stats not found');
+        }
+
+        return {
+          storyId,
+          isUnlocked: true,
+          gems: stats.gems,
+        };
       }
 
       throw error;
@@ -199,102 +204,114 @@ export class StoriesService {
   }
 
   async completeStory(userId: string, storyId: string) {
-    try {
-      return await this.prismaService.$transaction(
-        async (tx) => {
-          const story = await tx.story.findUnique({
-            where: { id: storyId },
-            select: {
-              _count: {
-                select: { pages: true },
-              },
-            },
-          });
+    const story = await this.prismaService.story.findUnique({
+      where: { id: storyId },
+      select: {
+        _count: {
+          select: { pages: true },
+        },
+      },
+    });
 
-          if (!story) {
-            throw new NotFoundException('Story not found');
-          }
+    if (!story) {
+      throw new NotFoundException('Story not found');
+    }
 
-          const progress = await tx.storyProgress.findUnique({
-            where: {
-              userId_storyId: {
-                userId,
-                storyId,
-              },
-            },
-            select: { completedAt: true },
-          });
-
-          if (!progress) {
-            throw new ForbiddenException('Story locked');
-          }
-
-          if (story._count.pages === 0) {
-            throw new BadRequestException('Story has no pages');
-          }
-
-          const now = new Date();
-          const firstCompletion = progress.completedAt === null;
-
-          if (firstCompletion) {
-            await tx.storyProgress.update({
-              where: {
-                userId_storyId: {
-                  userId,
-                  storyId,
-                },
-              },
-              data: { completedAt: now },
-            });
-
-            await tx.userStats.update({
-              where: { userId },
-              data: {
-                xp: { increment: STORY_COMPLETION_XP },
-              },
-            });
-          }
-
-          await this.streaksService.recordStreakActivity(tx, userId, now);
-
-          await this.questsService.recordProgress(
-            tx,
+    return this.prismaService.runSerializableTransaction(async (tx) => {
+      const progress = await tx.storyProgress.findUnique({
+        where: {
+          userId_storyId: {
             userId,
-            {
-              STORIES_COMPLETED: 1,
-              XP_EARNED: firstCompletion ? STORY_COMPLETION_XP : undefined,
-            },
-            now,
-          );
+            storyId,
+          },
+        },
+        select: {
+          completedAt: true,
+          lastCompletedAt: true,
+        },
+      });
 
-          const stats = await tx.userStats.findUnique({
+      if (!progress) {
+        throw new ForbiddenException('Story locked');
+      }
+
+      if (story._count.pages === 0) {
+        throw new BadRequestException('Story has no pages');
+      }
+
+      const now = new Date();
+      const today = utcDay(now);
+      const firstCompletion = progress.completedAt === null;
+      const lastCompletedAt = progress.lastCompletedAt ?? progress.completedAt;
+      const shouldRecordQuestCompletion =
+        lastCompletedAt === null || utcDay(lastCompletedAt).getTime() < today.getTime();
+
+      if (firstCompletion) {
+        await tx.storyProgress.update({
+          where: {
+            userId_storyId: {
+              userId,
+              storyId,
+            },
+          },
+          data: {
+            completedAt: now,
+            lastCompletedAt: now,
+          },
+        });
+      } else if (shouldRecordQuestCompletion) {
+        await tx.storyProgress.update({
+          where: {
+            userId_storyId: {
+              userId,
+              storyId,
+            },
+          },
+          data: {
+            lastCompletedAt: now,
+          },
+        });
+      }
+
+      await this.streaksService.recordStreakActivity(tx, userId, now);
+
+      if (shouldRecordQuestCompletion) {
+        await this.questsService.recordProgress(
+          tx,
+          userId,
+          {
+            STORIES_COMPLETED: 1,
+            XP_EARNED: firstCompletion ? STORY_COMPLETION_XP : undefined,
+          },
+          now,
+        );
+      }
+
+      const stats = firstCompletion
+        ? await tx.userStats.update({
+            where: { userId },
+            data: {
+              xp: { increment: STORY_COMPLETION_XP },
+            },
+            select: { xp: true },
+          })
+        : await tx.userStats.findUnique({
             where: { userId },
             select: { xp: true },
           });
 
-          if (!stats) {
-            throw new NotFoundException('User stats not found');
-          }
-
-          return {
-            storyId,
-            isCompleted: true,
-            firstCompletion,
-            completedAt: progress.completedAt ?? now,
-            xpReward: firstCompletion ? STORY_COMPLETION_XP : 0,
-            stats,
-          };
-        },
-        {
-          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        },
-      );
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
-        throw new ConflictException('Request conflict');
+      if (!stats) {
+        throw new NotFoundException('User stats not found');
       }
 
-      throw error;
-    }
+      return {
+        storyId,
+        isCompleted: true,
+        firstCompletion,
+        completedAt: progress.completedAt ?? now,
+        xpReward: firstCompletion ? STORY_COMPLETION_XP : 0,
+        stats,
+      };
+    });
   }
 }
