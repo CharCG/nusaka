@@ -248,8 +248,9 @@ model StoryProgress {
   userId  String
   storyId String
 
-  unlockedAt  DateTime  @default(now())
-  completedAt DateTime?
+  unlockedAt      DateTime  @default(now())
+  completedAt     DateTime?
+  lastCompletedAt DateTime?
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   story Story @relation(fields: [storyId], references: [id])
