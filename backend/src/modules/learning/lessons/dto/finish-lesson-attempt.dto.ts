@@ -1,19 +1,11 @@
-import { Type } from 'class-transformer';
-import { IsArray, IsNotEmpty, IsObject, IsUUID, ValidateNested } from 'class-validator';
-
-export class ExerciseAnswerDto {
-  @IsNotEmpty()
-  @IsUUID()
-  exerciseId: string;
-
-  @IsNotEmpty()
-  @IsObject()
-  answer: Record<string, unknown>;
-}
+import { IsBoolean, IsInt, Max, Min } from 'class-validator';
 
 export class FinishLessonAttemptDto {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ExerciseAnswerDto)
-  answers: ExerciseAnswerDto[];
+  @IsBoolean()
+  completed: boolean;
+
+  @IsInt()
+  @Min(0)
+  @Max(1000)
+  mistakes: number;
 }
