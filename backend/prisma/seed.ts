@@ -107,7 +107,7 @@ async function seedLessons() {
     title: 'Basic Greetings',
     exercises: [
       multipleChoice('What does "sugeng enjing" mean?', ['Good morning', 'Thank you', 'Goodbye', 'Good night'], 0),
-      translation('Sugeng dalu', ['good night']),
+      translation('Sugeng dalu', ['Good night']),
       wordOrder('Arrange the words to say "Good morning"', ['Sugeng', 'enjing']),
     ],
   };
@@ -120,7 +120,7 @@ async function seedLessons() {
         ['Saying thank you', 'Taking leave', 'Introducing yourself', 'Asking for help'],
         1,
       ),
-      translation('Aku pamit', ['i am taking leave', "i'm taking leave"]),
+      translation('Aku pamit', ['I am taking leave', "I'm taking leave"]),
       wordOrder('Arrange the words to say "I am taking leave"', ['Aku', 'pamit']),
     ],
   };
@@ -133,7 +133,7 @@ async function seedLessons() {
         ['What is your name?', 'Where are you from?', 'How are you?', 'How old are you?'],
         2,
       ),
-      translation('Apik', ['good']),
+      translation('Apik', ['Good']),
       fillBlank('Complete the question "How are you?"', 'Piye ____?', ['kabarmu']),
     ],
   };
@@ -146,7 +146,7 @@ async function seedLessons() {
         ['My name is Budi', 'I am from Solo', 'How are you?', 'Good morning'],
         0,
       ),
-      translation('Aku Budi', ['i am budi', "i'm budi"]),
+      translation('Aku Budi', ['I am Budi', "I'm Budi"]),
       wordOrder('Arrange the words to say "My name is Budi"', ['Jenengku', 'Budi']),
     ],
   };
@@ -159,7 +159,7 @@ async function seedLessons() {
         ['How are you?', 'What is your name?', 'Good morning', 'Where are you from?'],
         1,
       ),
-      translation('Jeneng', ['name']),
+      translation('Jeneng', ['Name']),
       fillBlank('Complete the question "What is your name?"', 'Sapa ____?', ['jenengmu']),
     ],
   };
@@ -172,7 +172,7 @@ async function seedLessons() {
         ['My name is Solo', 'I am fine', 'I am from Solo', 'I am taking leave'],
         2,
       ),
-      translation('Saka', ['from']),
+      translation('Saka', ['From']),
       wordOrder('Arrange the words to say "I am from Solo"', ['Aku', 'saka', 'Solo']),
     ],
   };
@@ -181,7 +181,7 @@ async function seedLessons() {
     title: 'Number 1-10',
     exercises: [
       multipleChoice('What number is "siji"?', ['One', 'Two', 'Three', 'Four'], 0),
-      translation('Loro', ['two', '2']),
+      translation('Loro', ['Two', '2']),
       matching([
         ['Siji', 'One'],
         ['Loro', 'Two'],
@@ -194,7 +194,7 @@ async function seedLessons() {
     title: 'Number 11-20',
     exercises: [
       multipleChoice('What number is "sewelas"?', ['Twelve', 'Eleven', 'Twenty', 'Ten'], 1),
-      translation('Rolas', ['twelve', '12']),
+      translation('Rolas', ['Twelve', '12']),
       matching([
         ['Sewelas', 'Eleven'],
         ['Rolas', 'Twelve'],
@@ -207,7 +207,7 @@ async function seedLessons() {
     title: 'Tens and Hundreds',
     exercises: [
       multipleChoice('What number is "sepuluh"?', ['Twenty', 'One hundred', 'Ten', 'Thirty'], 2),
-      translation('Satus', ['one hundred', 'a hundred', 'hundred', '100']),
+      translation('Satus', ['One hundred', 'A hundred', 'Hundred', '100']),
       matching([
         ['Sepuluh', 'Ten'],
         ['Rong puluh', 'Twenty'],
